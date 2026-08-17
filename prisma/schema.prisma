@@ -1,0 +1,435 @@
+// Schéma Prisma — Estimateur Kerplus
+// Tous les montants sont stockés en entiers de FCFA (XOF), sans décimales.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Énumérations métier
+// ---------------------------------------------------------------------------
+
+enum AdminRole {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+enum OrderStatus {
+  DRAFT
+  AWAITING_PAYMENT
+  PAID
+  IN_PREPARATION
+  READY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum ReportStatus {
+  DRAFT
+  IN_PREPARATION
+  READY
+  SENT
+  ARCHIVED
+}
+
+enum CallStatus {
+  NOT_SCHEDULED
+  PROPOSED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum SettingType {
+  STRING
+  INTEGER
+  DECIMAL
+  BOOLEAN
+  JSON
+  TEXT
+}
+
+// ---------------------------------------------------------------------------
+// Utilisateurs administrateurs
+// ---------------------------------------------------------------------------
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  preparedReports Report[]   @relation("ReportPreparedBy")
+  auditLogs       AuditLog[]
+
+  @@index([active])
+  @@map("admin_users")
+}
+
+// ---------------------------------------------------------------------------
+// Clients / prospects
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id            String    @id @default(cuid())
+  firstName     String
+  lastName      String
+  phone         String
+  whatsapp      String?
+  email         String
+  city          String?
+  internalNotes String?
+  consentAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  simulations Simulation[]
+  orders      Order[]
+
+  @@unique([email, phone], name: "email_phone")
+  @@index([email])
+  @@index([phone])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+// ---------------------------------------------------------------------------
+// Référentiels administrables
+// ---------------------------------------------------------------------------
+
+model ProjectType {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  // Coefficient x1000 stocké en entier (1.10 -> 1100) pour éviter les flottants.
+  coefficient  Int
+  active       Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  simulations Simulation[]
+
+  @@index([active, displayOrder])
+  @@map("project_types")
+}
+
+model CityZone {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  // Coefficient x1000 stocké en entier (0.95 -> 950).
+  coefficient  Int
+  active       Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  simulations Simulation[]
+
+  @@index([active, displayOrder])
+  @@map("city_zones")
+}
+
+model FinishLevel {
+  id                   String   @id @default(cuid())
+  name                 String
+  slug                 String   @unique
+  description          String?
+  // Prix au m² en FCFA entier.
+  pricePerSquareMeter  Int
+  active               Boolean  @default(true)
+  displayOrder         Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  simulations Simulation[]
+
+  @@index([active, displayOrder])
+  @@map("finish_levels")
+}
+
+// ---------------------------------------------------------------------------
+// Simulations
+// ---------------------------------------------------------------------------
+
+model Simulation {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Référentiels + instantanés figés au moment du calcul.
+  projectTypeId             String?
+  projectType               ProjectType? @relation(fields: [projectTypeId], references: [id], onDelete: SetNull)
+  projectTypeNameSnapshot   String
+  projectCoefficientSnapshot Int
+
+  surface Int
+
+  cityZoneId             String?
+  cityZone               CityZone? @relation(fields: [cityZoneId], references: [id], onDelete: SetNull)
+  cityNameSnapshot       String
+  cityCoefficientSnapshot Int
+
+  finishLevelId               String?
+  finishLevel                 FinishLevel? @relation(fields: [finishLevelId], references: [id], onDelete: SetNull)
+  finishNameSnapshot          String
+  pricePerSquareMeterSnapshot Int
+  // Pourcentage de fourchette x100 (10 % -> 1000).
+  rangePercentageSnapshot     Int
+
+  estimatedTotal   Int
+  estimatedMinimum Int
+  estimatedMaximum Int
+
+  ipHash      String?
+  userAgent   String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+
+  createdAt DateTime @default(now())
+
+  orders Order[]
+
+  @@index([createdAt])
+  @@index([customerId])
+  @@map("simulations")
+}
+
+// ---------------------------------------------------------------------------
+// Commandes
+// ---------------------------------------------------------------------------
+
+model Order {
+  id        String @id @default(cuid())
+  reference String @unique
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  simulationId String?
+  simulation   Simulation? @relation(fields: [simulationId], references: [id], onDelete: SetNull)
+
+  status   OrderStatus @default(DRAFT)
+  amount   Int
+  currency String      @default("XOF")
+
+  customerComment  String?
+  desiredStartDate DateTime?
+  internalNotes    String?
+
+  paidAt      DateTime?
+  dueAt       DateTime?
+  deliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+  report   Report?
+  call     ConsultationCall?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([customerId])
+  @@map("orders")
+}
+
+// ---------------------------------------------------------------------------
+// Paiements
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider              String
+  providerTransactionId String?
+  status                PaymentStatus @default(PENDING)
+  amount                Int
+  currency              String        @default("XOF")
+  externalReference     String?
+  verified              Boolean       @default(false)
+  verifiedAt            DateTime?
+  verifiedById          String?
+  failureReason         String?
+  metadata              Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events PaymentEvent[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([provider, providerTransactionId])
+  @@map("payments")
+}
+
+/// Journal des notifications fournisseur — garantit l'idempotence des webhooks.
+model PaymentEvent {
+  id         String  @id @default(cuid())
+  paymentId  String?
+  payment    Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  provider   String
+  eventId    String
+  eventType  String
+  payload    Json
+  signatureValid Boolean @default(false)
+  processedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@unique([provider, eventId])
+  @@index([paymentId])
+  @@map("payment_events")
+}
+
+// ---------------------------------------------------------------------------
+// Rapports Premium
+// ---------------------------------------------------------------------------
+
+model Report {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  status ReportStatus @default(DRAFT)
+
+  summary         String?
+  assumptions     String?
+  recommendations String?
+  exclusions      String?
+  timeline        String?
+
+  fileKey         String?
+  fileName        String?
+  fileSize        Int?
+  fileChecksum    String?
+  secureTokenHash String?  @unique
+  tokenExpiresAt  DateTime?
+
+  preparedById String?
+  preparedBy   AdminUser? @relation("ReportPreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
+  validatedBy  String?
+  validatedAt  DateTime?
+  sentAt       DateTime?
+  downloadedAt DateTime?
+  downloadCount Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items ReportItem[]
+
+  @@index([status])
+  @@map("reports")
+}
+
+model ReportItem {
+  id       String @id @default(cuid())
+  reportId String
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  category    String
+  label       String
+  amount      Int
+  // Pourcentage x100 (12,5 % -> 1250).
+  percentage  Int?
+  description String?
+  displayOrder Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reportId, displayOrder])
+  @@map("report_items")
+}
+
+// ---------------------------------------------------------------------------
+// Appel de 20 minutes
+// ---------------------------------------------------------------------------
+
+model ConsultationCall {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  status        CallStatus @default(NOT_SCHEDULED)
+  proposedAt    DateTime?
+  scheduledAt   DateTime?
+  completedAt   DateTime?
+  meetingLink   String?
+  internalNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("consultation_calls")
+}
+
+// ---------------------------------------------------------------------------
+// Paramètres applicatifs
+// ---------------------------------------------------------------------------
+
+model AppSetting {
+  id        String      @id @default(cuid())
+  key       String      @unique
+  value     String
+  type      SettingType @default(STRING)
+  label     String?
+  group     String      @default("general")
+  updatedAt DateTime    @updatedAt
+  createdAt DateTime    @default(now())
+
+  @@index([group])
+  @@map("app_settings")
+}
+
+// ---------------------------------------------------------------------------
+// Journal d'audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id          String  @id @default(cuid())
+  adminUserId String?
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ipHash     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

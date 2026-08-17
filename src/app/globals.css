@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Pile système : aucun appel réseau, rendu immédiat sur mobile. */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+      'Noto Sans', Arial, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply bg-sand-100 text-ink antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-forest-700;
+    text-wrap: balance;
+  }
+
+  /* Focus visible homogène et contrasté (accessibilité clavier). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-ember-500 ring-offset-white;
+  }
+
+  /* Champs numériques : on masque les flèches natives, redondantes avec le slider. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+@layer components {
+  /* Slider de surface — apparence cohérente sur Chrome, Safari, Firefox, Edge. */
+  .kp-range {
+    @apply h-2 w-full cursor-pointer appearance-none rounded-full bg-sand-300;
+  }
+
+  .kp-range::-webkit-slider-thumb {
+    @apply h-7 w-7 cursor-grab rounded-full border-4 border-white bg-forest-600 shadow-card;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .kp-range:active::-webkit-slider-thumb {
+    @apply cursor-grabbing bg-ember-400;
+  }
+
+  .kp-range::-moz-range-thumb {
+    @apply h-7 w-7 cursor-grab rounded-full border-4 border-white bg-forest-600 shadow-card;
+    border-width: 4px;
+  }
+
+  .kp-range::-moz-range-track {
+    @apply h-2 rounded-full bg-sand-300;
+  }
+
+  .kp-skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50
+      focus:rounded-lg focus:bg-forest-600 focus:px-4 focus:py-2 focus:text-white;
+  }
+
+  .kp-prose p {
+    @apply mb-4 leading-relaxed text-ink-soft;
+  }
+
+  .kp-prose h2 {
+    @apply mb-3 mt-8 text-xl font-bold;
+  }
+
+  .kp-prose h3 {
+    @apply mb-2 mt-6 text-lg font-semibold;
+  }
+
+  .kp-prose ul {
+    @apply mb-4 list-disc space-y-2 pl-5 text-ink-soft;
+  }
+
+  .kp-prose ol {
+    @apply mb-4 list-decimal space-y-2 pl-5 text-ink-soft;
+  }
+
+  .kp-prose a {
+    @apply text-forest-600 underline underline-offset-2 hover:text-forest-500;
+  }
+}
+
+/* Impression : le récapitulatif de commande doit rester lisible sur papier. */
+@media print {
+  .kp-no-print {
+    display: none !important;
+  }
+}

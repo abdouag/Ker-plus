@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kerplus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kerplus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kerplus}
+      POSTGRES_DB: ${POSTGRES_DB:-kerplus}
+      TZ: Africa/Dakar
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - kerplus-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kerplus} -d ${POSTGRES_DB:-kerplus}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kerplus-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kerplus}:${POSTGRES_PASSWORD:-kerplus}@db:5432/${POSTGRES_DB:-kerplus}?schema=public
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET est obligatoire}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-wave_link}
+      WAVE_PAYMENT_URL: ${WAVE_PAYMENT_URL:-}
+      PREMIUM_REPORT_PRICE_XOF: ${PREMIUM_REPORT_PRICE_XOF:-50000}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-preview}
+      EMAIL_FROM: ${EMAIL_FROM:-Kerplus <contact@kerplus.sn>}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      REPORT_STORAGE_DIR: /app/storage/reports
+      TZ: Africa/Dakar
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    volumes:
+      # Les rapports PDF doivent survivre aux redéploiements.
+      - kerplus-reports:/app/storage
+    # Applique les migrations puis démarre le serveur.
+    command: ['sh', '-c', 'npx prisma migrate deploy && node server.js']
+
+volumes:
+  kerplus-db-data:
+  kerplus-reports:

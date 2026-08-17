@@ -110,6 +110,17 @@ export const env = {
     },
   },
 
+  seo: {
+    /**
+     * Mettre SEO_INDEXING=false sur un environnement de recette ou de
+     * démonstration : le site répond alors `noindex` et interdit tout
+     * référencement du domaine temporaire.
+     */
+    get indexing() {
+      return boolean('SEO_INDEXING', true);
+    },
+  },
+
   reports: {
     get storageDir() {
       return optional('REPORT_STORAGE_DIR', './storage/reports');

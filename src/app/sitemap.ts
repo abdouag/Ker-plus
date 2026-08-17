@@ -1,6 +1,10 @@
 import type { MetadataRoute } from 'next';
 import { env } from '@/lib/env';
 
+// Rendu à la demande : l'URL canonique est lue au démarrage du serveur et non
+// figée au moment du build (déploiements successifs, domaines temporaires).
+export const dynamic = 'force-dynamic';
+
 const ROUTES: {
   path: string;
   priority: number;

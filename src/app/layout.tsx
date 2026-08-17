@@ -25,7 +25,8 @@ export const metadata: Metadata = {
     'construire une villa au Sénégal',
     'devis construction Sénégal',
   ],
-  robots: { index: true, follow: true },
+  // Sur un environnement de recette (SEO_INDEXING=false), le site n'est pas indexé.
+  robots: env.seo.indexing ? { index: true, follow: true } : { index: false, follow: false },
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',

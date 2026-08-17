@@ -23,6 +23,12 @@ ENV NEXT_OUTPUT_STANDALONE=true
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate && npm run build
+# Le seed est compilé en CommonJS autonome : l'image de production peut ainsi
+# initialiser les référentiels sans TypeScript ni dépendances de développement.
+RUN npx esbuild prisma/seed.ts \
+  --bundle --platform=node --target=node22 --format=cjs \
+  --external:@prisma/client --external:bcryptjs \
+  --outfile=/app/dist-scripts/seed.cjs
 
 # --- Exécution ---------------------------------------------------------------
 FROM base AS runner
@@ -44,7 +50,9 @@ COPY --from=builder --chown=kerplus:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=kerplus:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=kerplus:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=kerplus:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=kerplus:nodejs /app/scripts ./scripts
+COPY --from=builder --chown=kerplus:nodejs /app/dist-scripts ./dist-scripts
+COPY --from=builder --chown=kerplus:nodejs /app/scripts/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
 # Stockage des rapports PDF (à monter sur un volume persistant).
 RUN mkdir -p /app/storage/reports /app/storage/emails \
@@ -56,4 +64,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -fsS http://127.0.0.1:3000/api/health || exit 1
 
-CMD ["node", "server.js"]
+CMD ["./docker-entrypoint.sh"]

@@ -288,13 +288,51 @@ modifie jamais une estimation passée.
 
 ## 11. Déploiement
 
+### Mise en ligne rapide pour un testeur (domaine temporaire)
+
+GitHub Pages ne convient pas : l'application nécessite un serveur Node et une
+base PostgreSQL. Le dépôt est prêt pour un déploiement en un clic sur **Render**
+(`render.yaml`), qui fournit un domaine temporaire
+`https://<nom-du-service>.onrender.com`.
+
+1. Pousser la branche sur GitHub.
+2. Render → **New → Blueprint** → sélectionner le dépôt et la branche.
+   Le blueprint crée la base PostgreSQL et le service web à partir du
+   `Dockerfile` ; `AUTH_SECRET` est généré automatiquement.
+3. Renseigner les variables marquées « à saisir » :
+   - `ADMIN_EMAIL` et `ADMIN_PASSWORD` (compte administrateur initial, ≥ 12
+     caractères avec majuscule, minuscule et chiffre) ;
+   - `WAVE_PAYMENT_URL` (facultatif en recette) ;
+   - `NEXT_PUBLIC_SITE_URL` : l'URL attribuée par Render, à renseigner après le
+     premier déploiement puis relancer le service.
+4. Au démarrage, le conteneur applique les migrations et le seed
+   (`SEED_ON_START=true`) : référentiels, paramètres et compte administrateur.
+5. Transmettre au testeur l'URL publique et, séparément, les identifiants
+   `/admin/login`.
+
+`SEO_INDEXING=false` est actif par défaut sur ce blueprint : le domaine
+temporaire n'est pas référencé.
+
+**Limites de l'offre gratuite Render** : le service s'endort après 15 minutes
+d'inactivité (premier appel ≈ 30 s), le disque n'est pas persistant — les PDF
+générés sont perdus à chaque redémarrage — et la base gratuite expire au bout
+de 30 jours. Pour une recette longue, passer le service en offre payante et
+décommenter la section `disk` de `render.yaml` (montage sur `/app/storage`).
+
+Autres hébergeurs adaptés au même `Dockerfile` : **Railway** (volume persistant
+dès l'offre d'essai, domaine `*.up.railway.app`), **Fly.io**, ou toute VM avec
+`docker compose`. **Vercel** convient à Next.js mais son système de fichiers est
+éphémère : le stockage des PDF devrait alors être déporté vers un service objet
+(S3, R2) via une adaptation de `src/lib/services/reports.ts`.
+
 ### Docker
 
 ```bash
 export AUTH_SECRET="$(openssl rand -base64 48)"
+export ADMIN_EMAIL="admin@kerplus.sn" ADMIN_PASSWORD="…"
 docker compose up -d --build
-# L'application applique `prisma migrate deploy` au démarrage.
-docker compose exec app npx prisma db seed
+# Le conteneur applique les migrations puis le seed idempotent au démarrage
+# (SEED_ON_START=true par défaut dans docker-compose.yml).
 ```
 
 Le service `app` expose une sonde `/api/health` (utilisée par le `HEALTHCHECK`)

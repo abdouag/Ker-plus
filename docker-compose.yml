@@ -42,14 +42,19 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       REPORT_STORAGE_DIR: /app/storage/reports
+      # Seed idempotent au démarrage : référentiels, paramètres et, si
+      # ADMIN_PASSWORD est fourni, le compte administrateur initial.
+      SEED_ON_START: ${SEED_ON_START:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrateur Kerplus}
+      SEO_INDEXING: ${SEO_INDEXING:-true}
       TZ: Africa/Dakar
     ports:
       - '${APP_PORT:-3000}:3000'
     volumes:
       # Les rapports PDF doivent survivre aux redéploiements.
       - kerplus-reports:/app/storage
-    # Applique les migrations puis démarre le serveur.
-    command: ['sh', '-c', 'npx prisma migrate deploy && node server.js']
 
 volumes:
   kerplus-db-data:

@@ -1,0 +1,96 @@
+# =============================================================================
+# Déploiement de recette — Render (https://render.com)
+#
+# Ce « blueprint » crée en une opération, depuis le dépôt GitHub :
+#   - une base PostgreSQL managée ;
+#   - le service web (image Docker du dépôt) exposé sur un domaine temporaire
+#     https://<nom-du-service>.onrender.com
+#
+# Utilisation : Render → New → Blueprint → sélectionner ce dépôt et la branche.
+# Les migrations et le seed sont exécutés automatiquement au démarrage
+# (voir scripts/docker-entrypoint.sh).
+#
+# ⚠️ Offre gratuite : le service s'endort après 15 minutes d'inactivité (le
+# premier appel suivant prend ~30 s) et le disque n'est pas persistant — les
+# PDF générés sont perdus à chaque redémarrage. Pour une recette longue ou une
+# mise en production, passer le service en offre payante et ajouter un disque
+# monté sur /app/storage (voir la section « disk » commentée ci-dessous).
+# =============================================================================
+
+databases:
+  - name: kerplus-db
+    databaseName: kerplus
+    user: kerplus
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: kerplus-estimateur
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    # Disque persistant pour les rapports PDF (offre payante uniquement).
+    # disk:
+    #   name: kerplus-storage
+    #   mountPath: /app/storage
+    #   sizeGB: 1
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kerplus-db
+          property: connectionString
+
+      # Secret de session généré par Render, jamais stocké dans le dépôt.
+      - key: AUTH_SECRET
+        generateValue: true
+
+      - key: PORT
+        value: 3000
+      - key: TZ
+        value: Africa/Dakar
+
+      # À renseigner après le premier déploiement avec l'URL attribuée :
+      # https://<nom-du-service>.onrender.com
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+
+      # Environnement de recette : aucun référencement du domaine temporaire.
+      - key: SEO_INDEXING
+        value: 'false'
+
+      # Migrations + seed idempotent au démarrage.
+      - key: SEED_ON_START
+        value: 'true'
+      # Compte administrateur initial (à saisir dans l'interface Render, jamais
+      # dans le dépôt). Laisser vide pour créer le compte manuellement.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: Administrateur Kerplus
+
+      # Paiement : mode lien Wave, confirmation manuelle par l'administrateur.
+      - key: PAYMENT_PROVIDER
+        value: wave_link
+      - key: WAVE_PAYMENT_URL
+        sync: false
+      - key: PREMIUM_REPORT_PRICE_XOF
+        value: '50000'
+
+      # Emails : aucun envoi réel tant que le SMTP n'est pas configuré.
+      - key: EMAIL_PROVIDER
+        value: preview
+      - key: EMAIL_FROM
+        value: Kerplus <contact@kerplus.sn>
+
+      - key: REPORT_STORAGE_DIR
+        value: /app/storage/reports
+      - key: RATE_LIMIT_ENABLED
+        value: 'true'

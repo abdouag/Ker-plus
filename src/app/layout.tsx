@@ -1,6 +1,17 @@
 import type { Metadata, Viewport } from 'next';
+import { Manrope } from 'next/font/google';
 import { env } from '@/lib/env';
 import './globals.css';
+
+/**
+ * Police auto-hébergée par next/font : téléchargée au build, servie depuis le
+ * domaine — aucune requête tierce au runtime, aucun décalage de rendu.
+ */
+const manrope = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-manrope',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -48,7 +59,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={manrope.variable}>
       <body className="min-h-screen">
         <a href="#contenu" className="kp-skip-link">
           Aller au contenu principal

@@ -15,7 +15,10 @@ export interface CityZoneOption {
 export interface FinishLevelOption {
   id: string;
   name: string;
+  /** Slug stable du référentiel — pilote l'icône et le badge « Le plus choisi ». */
+  slug: string;
   description: string | null;
+  /** Utilisé uniquement pour le calcul instantané : jamais affiché au visiteur. */
   pricePerSquareMeter: number;
 }
 

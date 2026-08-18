@@ -3,6 +3,9 @@ import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ConsentBanner } from '@/components/layout/ConsentBanner';
 import { EstimatorApp } from '@/components/estimator/EstimatorApp';
+import { RealisationsSection } from '@/components/home/RealisationsSection';
+import { LinkButton } from '@/components/ui/Button';
+import { IconBolt, IconEye, IconFileText, IconPhone } from '@/components/ui/icons';
 import { Card, CardBody } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Feedback';
 import { getActiveReferentials } from '@/lib/services/estimation';
@@ -26,6 +29,29 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
+
+const ADVANTAGES = [
+  {
+    icon: IconBolt,
+    title: 'Estimation immédiate',
+    text: 'Le budget indicatif s’affiche pendant que vous décrivez votre projet, sans inscription ni attente.',
+  },
+  {
+    icon: IconEye,
+    title: 'Hypothèses transparentes',
+    text: 'Les hypothèses de calcul, les postes exclus et les facteurs de variation sont affichés clairement.',
+  },
+  {
+    icon: IconFileText,
+    title: 'Rapport préparé par notre équipe',
+    text: 'Chaque rapport détaillé est préparé et validé par Kerplus : rien n’est généré automatiquement.',
+  },
+  {
+    icon: IconPhone,
+    title: 'Un échange pour décider',
+    text: 'Un appel conseil accompagne chaque rapport afin d’en commenter les conclusions avec vous.',
+  },
+];
 
 const STEPS = [
   {
@@ -135,13 +161,24 @@ export default async function HomePage() {
               Kerplus.sn — construction au Sénégal
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
-              Combien coûte votre construction au Sénégal ?
+              Construisez votre maison avec une vision claire dès le départ.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-forest-100 sm:text-lg">
-              Obtenez en moins de deux minutes une estimation indicative du coût de votre maison,
-              villa duplex ou immeuble, puis commandez un rapport technique détaillé préparé par nos
-              équipes pour {formatXOF(price)}.
+              Kerplus vous accompagne dans la préparation, l’estimation et le suivi de votre projet
+              de construction au Sénégal, simplement et en toute transparence.
             </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <LinkButton href="#estimateur" size="lg">
+                Estimer mon projet
+              </LinkButton>
+              <LinkButton
+                href="#methode"
+                size="lg"
+                className="border border-forest-400 bg-forest-700/40 text-white hover:bg-forest-700/70 active:bg-forest-700"
+              >
+                Découvrir Kerplus
+              </LinkButton>
+            </div>
             <dl className="mt-8 grid gap-4 sm:grid-cols-3">
               {[
                 ['Estimation immédiate', 'Résultat instantané, sans inscription'],
@@ -181,6 +218,7 @@ export default async function HomePage() {
                 finishLevels: referentials.finishLevels.map((level) => ({
                   id: level.id,
                   name: level.name,
+                  slug: level.slug,
                   description: level.description,
                   pricePerSquareMeter: level.pricePerSquareMeter,
                 })),
@@ -201,9 +239,18 @@ export default async function HomePage() {
         </section>
 
         {/* Méthode */}
-        <section id="methode" className="mx-auto max-w-content px-4 pb-12 sm:px-6">
-          <h2 className="text-2xl font-extrabold sm:text-3xl">Comment ça marche</h2>
-          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+        <section
+          id="methode"
+          aria-labelledby="methode-titre"
+          className="mx-auto max-w-content px-4 py-14 sm:px-6"
+        >
+          <p className="text-sm font-semibold uppercase tracking-wide text-ember-500">
+            Comment ça marche
+          </p>
+          <h2 id="methode-titre" className="mt-2 text-2xl font-extrabold sm:text-3xl">
+            Trois étapes, une vision claire
+          </h2>
+          <ol className="mt-8 grid gap-4 md:grid-cols-3">
             {STEPS.map((step, index) => (
               <li key={step.title}>
                 <Card className="h-full">
@@ -220,8 +267,40 @@ export default async function HomePage() {
           </ol>
         </section>
 
+        {/* Avantages */}
+        <section
+          aria-labelledby="avantages-titre"
+          className="border-y border-sand-200 bg-sand-50"
+        >
+          <div className="mx-auto max-w-content px-4 py-14 sm:px-6 sm:py-16">
+            <p className="text-sm font-semibold uppercase tracking-wide text-ember-500">
+              Pourquoi Kerplus
+            </p>
+            <h2 id="avantages-titre" className="mt-2 max-w-2xl text-2xl font-extrabold sm:text-3xl">
+              Décidez sur des bases claires, pas sur des impressions
+            </h2>
+            <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {ADVANTAGES.map((advantage) => (
+                <li
+                  key={advantage.title}
+                  className="rounded-2xl border border-sand-200 bg-white p-5 shadow-card"
+                >
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-forest-50 text-forest-600">
+                    <advantage.icon width={22} height={22} />
+                  </span>
+                  <h3 className="mt-3 text-base font-bold text-forest-700">{advantage.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{advantage.text}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Réalisations */}
+        <RealisationsSection />
+
         {/* Rapport détaillé */}
-        <section id="rapport" className="mx-auto max-w-content px-4 pb-14 sm:px-6">
+        <section id="rapport" className="mx-auto max-w-content px-4 py-14 sm:px-6">
           <Card>
             <CardBody className="grid gap-8 md:grid-cols-[minmax(0,1fr)_320px] md:items-center">
               <div>
@@ -270,6 +349,24 @@ export default async function HomePage() {
               </div>
             </CardBody>
           </Card>
+        </section>
+
+        {/* Appel à l'action final */}
+        <section aria-labelledby="cta-final-titre" className="bg-forest-600">
+          <div className="mx-auto flex max-w-content flex-col items-start gap-6 px-4 py-14 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <h2 id="cta-final-titre" className="text-2xl font-extrabold text-white sm:text-3xl">
+                Votre projet mérite un budget posé sur des bases sérieuses.
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-forest-100">
+                Commencez par une estimation gratuite : deux minutes suffisent pour cadrer votre
+                projet et décider de la suite.
+              </p>
+            </div>
+            <LinkButton href="#estimateur" size="lg" className="shrink-0">
+              Estimer mon projet
+            </LinkButton>
+          </div>
         </section>
 
         {/* Contenu indexable */}

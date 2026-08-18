@@ -10,7 +10,7 @@ test('l’estimation se met à jour instantanément et chaque champ influence le
 }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Combien coûte');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Construisez votre maison');
 
   const total = page.getByTestId('estimation-total');
   await expect(total).toBeVisible();

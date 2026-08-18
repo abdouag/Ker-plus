@@ -1,7 +1,20 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { LinkButton } from '@/components/ui/Button';
+import { IconClose, IconMenu } from '@/components/ui/icons';
+
+const NAV_LINKS = [
+  { href: '/#estimateur', label: 'Estimateur' },
+  { href: '/#methode', label: 'Comment ça marche' },
+  { href: '/#realisations', label: 'Réalisations' },
+  { href: '/#rapport', label: 'Rapport détaillé' },
+];
 
 export function SiteHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -12,30 +25,55 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Navigation principale" className="hidden items-center gap-6 md:flex">
-          <Link
-            href="/#estimateur"
-            className="text-sm font-semibold text-ink-soft hover:text-forest-600"
-          >
-            Estimateur
-          </Link>
-          <Link
-            href="/#rapport"
-            className="text-sm font-semibold text-ink-soft hover:text-forest-600"
-          >
-            Rapport détaillé
-          </Link>
-          <Link
-            href="/#methode"
-            className="text-sm font-semibold text-ink-soft hover:text-forest-600"
-          >
-            Méthode
-          </Link>
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-sm font-semibold text-ink-soft transition-colors hover:text-forest-600"
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        <LinkButton href="/#estimateur" size="sm" className="shrink-0">
-          Estimer mon projet
-        </LinkButton>
+        <div className="flex items-center gap-2">
+          <LinkButton href="/#estimateur" size="sm" className="shrink-0">
+            Estimer mon projet
+          </LinkButton>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="menu-mobile"
+            aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-sand-200 text-forest-700 hover:bg-sand-50 md:hidden"
+          >
+            {menuOpen ? <IconClose /> : <IconMenu />}
+          </button>
+        </div>
       </div>
+
+      {menuOpen ? (
+        <nav
+          id="menu-mobile"
+          aria-label="Navigation mobile"
+          className="border-t border-sand-200 bg-white px-4 py-2 md:hidden"
+        >
+          <ul>
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="block rounded-lg px-2 py-3 text-base font-semibold text-ink-soft hover:bg-sand-50 hover:text-forest-600"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
     </header>
   );
 }

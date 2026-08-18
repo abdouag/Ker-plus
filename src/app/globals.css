@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    /* Pile système : aucun appel réseau, rendu immédiat sur mobile. */
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    /* Manrope auto-hébergée (next/font), repli sur la pile système. */
+    --font-sans: var(--font-manrope), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
       'Noto Sans', Arial, sans-serif;
   }
 

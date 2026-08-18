@@ -7,9 +7,14 @@ import {
   SURFACE_MAX,
   SURFACE_MIN,
   SURFACE_STEP,
-  fromCoefficientInt,
 } from '@/lib/estimation/constants';
-import { formatDecimal, formatSurface, formatXOF } from '@/lib/format';
+import { formatSurface, formatXOF } from '@/lib/format';
+import {
+  IconCheck,
+  IconHome,
+  IconHomeCheck,
+  IconSparkle,
+} from '@/components/ui/icons';
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/client';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +34,28 @@ interface EstimatorAppProps {
 interface PersistedSimulation {
   reference: string;
   signature: string;
+}
+
+/** Icône associée à chaque gamme de finition (repli : maison simple). */
+const FINISH_ICONS: Record<string, typeof IconHome> = {
+  economique: IconHome,
+  standard: IconHomeCheck,
+  'haut-standing': IconSparkle,
+};
+
+/**
+ * Transforme la description administrable d'une finition en 2 ou 3
+ * caractéristiques courtes. La description reste la source unique : aucune
+ * donnée n'est dupliquée en dur dans l'interface.
+ */
+function finishFeatures(description: string | null): string[] {
+  if (!description) return [];
+  return description
+    .split(/[,;]| et /)
+    .map((part) => part.replace(/\.\s*$/, '').trim())
+    .filter((part) => part.length > 2)
+    .slice(0, 3)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1));
 }
 
 function buildSignature(
@@ -198,10 +225,10 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
                 return (
                   <label
                     key={option.id}
-                    className={`flex cursor-pointer flex-col gap-1 rounded-xl border-2 p-3 transition-colors ${
+                    className={`flex cursor-pointer flex-col gap-1 rounded-xl border-2 p-3 transition-all duration-150 focus-within:ring-2 focus-within:ring-ember-500 focus-within:ring-offset-2 ${
                       selected
-                        ? 'border-forest-600 bg-forest-50'
-                        : 'border-sand-200 bg-white hover:border-forest-300'
+                        ? 'border-forest-600 bg-forest-50 shadow-card'
+                        : 'border-sand-200 bg-white hover:-translate-y-0.5 hover:border-forest-300 hover:shadow-card'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -217,9 +244,9 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
                         className="h-4 w-4 accent-forest-600"
                       />
                       <span className="text-sm font-semibold text-forest-700">{option.name}</span>
-                      <span className="ml-auto text-xs font-medium text-ink-muted">
-                        ×{formatDecimal(fromCoefficientInt(option.coefficient))}
-                      </span>
+                      {selected ? (
+                        <IconCheck width={16} height={16} className="ml-auto shrink-0 text-forest-600" />
+                      ) : null}
                     </span>
                     {option.description ? (
                       <span className="pl-6 text-xs leading-snug text-ink-muted">
@@ -299,42 +326,73 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
             <legend className="text-sm font-semibold text-forest-700">
               4. Niveau de finition <span className="text-ember-500">*</span>
             </legend>
-            <div className="mt-3 space-y-2">
+            {/* Les prix au m² de chaque gamme restent internes au calcul :
+                ils ne sont jamais affichés au visiteur. */}
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {finishLevels.map((option) => {
                 const selected = option.id === finishLevelId;
+                const Icon = FINISH_ICONS[option.slug] ?? IconHome;
+                const features = finishFeatures(option.description);
+                const highlighted = option.slug === 'standard';
                 return (
                   <label
                     key={option.id}
-                    className={`flex cursor-pointer gap-3 rounded-xl border-2 p-3 transition-colors ${
+                    className={`relative flex cursor-pointer flex-col gap-3 rounded-xl border-2 p-4 pt-5 transition-all duration-150 focus-within:ring-2 focus-within:ring-ember-500 focus-within:ring-offset-2 ${
                       selected
-                        ? 'border-forest-600 bg-forest-50'
-                        : 'border-sand-200 bg-white hover:border-forest-300'
+                        ? 'border-forest-600 bg-forest-50 shadow-card'
+                        : 'border-sand-200 bg-white hover:-translate-y-0.5 hover:border-forest-300 hover:shadow-card'
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="finishLevel"
-                      value={option.id}
-                      checked={selected}
-                      onChange={() => {
-                        markStarted();
-                        setFinishLevelId(option.id);
-                      }}
-                      className="mt-1 h-4 w-4 shrink-0 accent-forest-600"
-                    />
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="text-sm font-semibold text-forest-700">{option.name}</span>
-                        <span className="text-sm font-bold text-ember-600">
-                          {formatXOF(option.pricePerSquareMeter)}/m²
-                        </span>
+                    {highlighted ? (
+                      <span className="absolute -top-2.5 left-4 rounded-full bg-ember-400 px-2.5 py-0.5 text-[11px] font-bold text-forest-800">
+                        Le plus choisi
                       </span>
-                      {option.description ? (
-                        <span className="mt-0.5 block text-xs leading-snug text-ink-muted">
-                          {option.description}
-                        </span>
-                      ) : null}
+                    ) : null}
+
+                    <span className="flex items-start justify-between gap-2">
+                      <span
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                          selected ? 'bg-forest-600 text-white' : 'bg-sand-100 text-forest-600'
+                        }`}
+                      >
+                        <Icon width={22} height={22} />
+                      </span>
+                      <input
+                        type="radio"
+                        name="finishLevel"
+                        value={option.id}
+                        checked={selected}
+                        onChange={() => {
+                          markStarted();
+                          setFinishLevelId(option.id);
+                        }}
+                        className="mt-1 h-4 w-4 shrink-0 accent-forest-600"
+                      />
                     </span>
+
+                    <span className="text-sm font-bold text-forest-700">{option.name}</span>
+
+                    {features.length >= 2 ? (
+                      <ul className="space-y-1.5">
+                        {features.map((feature) => (
+                          <li
+                            key={feature}
+                            className="flex items-start gap-1.5 text-xs leading-snug text-ink-soft"
+                          >
+                            <IconCheck
+                              width={13}
+                              height={13}
+                              className="mt-0.5 shrink-0 text-forest-500"
+                            />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : option.description ? (
+                      <span className="text-xs leading-snug text-ink-muted">
+                        {option.description}
+                      </span>
+                    ) : null}
                   </label>
                 );
               })}

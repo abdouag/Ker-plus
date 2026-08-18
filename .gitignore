@@ -49,3 +49,6 @@ Thumbs.db
 .turbo
 tsconfig.tsbuildinfo
 /tmp-pg/
+
+# Artefacts de build du conteneur
+dist-scripts/

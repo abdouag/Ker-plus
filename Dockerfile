@@ -17,6 +17,15 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci
 
+# --- Dépendances de production ------------------------------------------------
+# Arbre de dépendances complet hors développement : il contient le client Prisma
+# et le CLI Prisma avec toutes ses dépendances transitives, indispensables pour
+# appliquer les migrations au démarrage du conteneur.
+FROM base AS prod-deps
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+RUN npm ci --omit=dev
+
 # --- Build -------------------------------------------------------------------
 FROM base AS builder
 ENV NEXT_OUTPUT_STANDALONE=true
@@ -42,14 +51,19 @@ RUN groupadd --system --gid 1001 nodejs \
 
 # Sortie standalone : serveur + dépendances strictement nécessaires.
 COPY --from=builder --chown=kerplus:nodejs /app/.next/standalone ./
+# Next.js recopie les fichiers .env présents à la racine dans la sortie
+# standalone. Ils sont déjà exclus par .dockerignore ; cette suppression
+# garantit qu'aucune configuration locale ne subsiste dans l'image finale.
+RUN rm -f .env .env.local .env.development .env.production .env.test
 COPY --from=builder --chown=kerplus:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=kerplus:nodejs /app/public ./public
 
-# Migrations, seed et client Prisma pour `prisma migrate deploy` au démarrage.
-COPY --from=builder --chown=kerplus:nodejs /app/prisma ./prisma
+# Dépendances de production complètes : le CLI Prisma a besoin de tout son arbre
+# (@prisma/config, effect…) pour exécuter `migrate deploy` au démarrage.
+COPY --from=prod-deps --chown=kerplus:nodejs /app/node_modules ./node_modules
+# Client Prisma généré pendant le build, aligné sur le schéma courant.
 COPY --from=builder --chown=kerplus:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=kerplus:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=kerplus:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=kerplus:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=kerplus:nodejs /app/dist-scripts ./dist-scripts
 COPY --from=builder --chown=kerplus:nodejs /app/scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh

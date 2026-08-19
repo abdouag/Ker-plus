@@ -7,7 +7,7 @@ import { IconClose, IconMenu } from '@/components/ui/icons';
 
 const NAV_LINKS = [
   { href: '/#estimateur', label: 'Estimateur' },
-  { href: '/#methode', label: 'Comment ça marche' },
+  { href: '/services', label: 'Services' },
   { href: '/#realisations', label: 'Réalisations' },
   { href: '/#rapport', label: 'Rapport détaillé' },
 ];

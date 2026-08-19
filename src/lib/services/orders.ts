@@ -181,8 +181,23 @@ export async function createOrder(
         currency: 'XOF',
         customerComment: payload.comment?.trim() || null,
         desiredStartDate: payload.desiredStartDate ? new Date(payload.desiredStartDate) : null,
+        requestedServices: payload.requestedServices,
       },
     });
+
+    // Une ligne de suivi par service réel demandé (« conseillez-moi » n'est
+    // pas un service à piloter : il reste visible via requestedServices).
+    const trackableServices = payload.requestedServices.filter(
+      (key) => key !== 'needs_guidance',
+    );
+    if (trackableServices.length > 0) {
+      await tx.orderService.createMany({
+        data: trackableServices.map((serviceKey) => ({
+          orderId: createdOrder.id,
+          serviceKey,
+        })),
+      });
+    }
 
     const createdPayment = await tx.payment.create({
       data: {

@@ -4,6 +4,7 @@ import { SiteFooter } from '@/components/layout/SiteFooter';
 import { ConsentBanner } from '@/components/layout/ConsentBanner';
 import { EstimatorApp } from '@/components/estimator/EstimatorApp';
 import { RealisationsSection } from '@/components/home/RealisationsSection';
+import { ServicesSection } from '@/components/home/ServicesSection';
 import { LinkButton } from '@/components/ui/Button';
 import { IconBolt, IconEye, IconFileText, IconPhone } from '@/components/ui/icons';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -266,6 +267,9 @@ export default async function HomePage() {
             ))}
           </ol>
         </section>
+
+        {/* Services */}
+        <ServicesSection />
 
         {/* Avantages */}
         <section

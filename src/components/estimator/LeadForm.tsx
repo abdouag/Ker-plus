@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader, CardFooter } from '@/components/ui/Card';
 import { CheckboxField, TextAreaField, TextField } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/Feedback';
+import { ServicesPicker } from './ServicesPicker';
+import { serviceLabel, type ServiceKey } from '@/lib/content/services';
 
 interface LeadFormProps {
   amount: number;
@@ -24,6 +26,9 @@ interface LeadFormProps {
     simulationReference?: string;
   };
   defaultCity: string;
+  /** Sélection de services, gérée par le parent pour survivre au repli du formulaire. */
+  selectedServices: ServiceKey[];
+  onServicesChange: (next: ServiceKey[]) => void;
   onCancel: () => void;
 }
 
@@ -45,6 +50,8 @@ export function LeadForm({
   deliveryHours,
   estimation,
   defaultCity,
+  selectedServices,
+  onServicesChange,
   onCancel,
 }: LeadFormProps) {
   const router = useRouter();
@@ -97,6 +104,7 @@ export function LeadForm({
           ...raw,
           ...estimation,
           ...readUtm(),
+          requestedServices: selectedServices,
           website: String(formData.get('website') ?? ''),
         }),
       });
@@ -141,6 +149,15 @@ export function LeadForm({
           <div aria-hidden="true" className="absolute h-0 w-0 overflow-hidden opacity-0">
             <label htmlFor="website">Ne pas remplir</label>
             <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+          </div>
+
+          <ServicesPicker value={selectedServices} onChange={onServicesChange} />
+
+          <div className="border-t border-sand-200 pt-5">
+            <h3 className="text-sm font-semibold text-forest-700">Vos coordonnées</h3>
+            <p className="mt-1 text-sm text-ink-muted">
+              Elles servent uniquement à préparer votre rapport et à vous le transmettre.
+            </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -271,6 +288,24 @@ export function LeadForm({
             />
           </div>
         </CardBody>
+
+        {selectedServices.length > 0 ? (
+          <CardBody className="border-t border-sand-200 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+              Services sélectionnés pour votre projet
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {selectedServices.map((key) => (
+                <li
+                  key={key}
+                  className="rounded-full bg-forest-50 px-3 py-1 text-xs font-semibold text-forest-700"
+                >
+                  {serviceLabel(key)}
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        ) : null}
 
         <CardFooter className="flex flex-col gap-3 sm:flex-row-reverse">
           <Button type="submit" size="lg" loading={submitting} className="sm:flex-1">

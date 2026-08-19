@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { SURFACE_MAX, SURFACE_MIN } from '@/lib/estimation/constants';
 import { isValidPhone, normalizePhone } from '@/lib/phone';
+import { SERVICE_KEYS } from '@/lib/content/services';
 
 /** Identifiant Prisma (cuid). Volontairement souple pour rester portable. */
 const idSchema = z
@@ -15,6 +16,13 @@ export const surfaceSchema = z
   .int('La surface doit être un nombre entier de m².')
   .min(SURFACE_MIN, `La surface minimale est de ${SURFACE_MIN} m².`)
   .max(SURFACE_MAX, `La surface maximale est de ${SURFACE_MAX} m².`);
+
+/** Services demandés : uniquement des clés du catalogue, sans doublon. */
+export const requestedServicesSchema = z
+  .array(z.enum(SERVICE_KEYS))
+  .max(SERVICE_KEYS.length, 'Sélection de services invalide.')
+  .default([])
+  .transform((keys) => [...new Set(keys)]);
 
 /** Paramètres d'une estimation : seuls des identifiants sont acceptés. */
 export const estimationInputSchema = z.object({
@@ -91,6 +99,8 @@ export const createOrderSchema = estimationInputSchema
     captchaToken: z.string().max(4096).optional(),
     /** Simulation déjà enregistrée à réutiliser, si elle correspond aux paramètres. */
     simulationReference: z.string().trim().max(40).optional(),
+    /** Services souhaités pour le projet (étape facultative du formulaire). */
+    requestedServices: requestedServicesSchema,
   })
   .superRefine((data, ctx) => {
     if (!data.whatsappSameAsPhone) {

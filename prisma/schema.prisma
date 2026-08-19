@@ -48,6 +48,14 @@ enum ReportStatus {
   ARCHIVED
 }
 
+enum ServiceStatus {
+  NOT_STARTED
+  INFO_REQUIRED
+  IN_PROGRESS
+  DOCUMENT_AVAILABLE
+  COMPLETED
+}
+
 enum CallStatus {
   NOT_SCHEDULED
   PROPOSED
@@ -242,6 +250,8 @@ model Order {
   customerComment  String?
   desiredStartDate DateTime?
   internalNotes    String?
+  /// Clés contrôlées des services demandés (catalogue src/lib/content/services.ts).
+  requestedServices String[] @default([])
 
   paidAt      DateTime?
   dueAt       DateTime?
@@ -253,11 +263,30 @@ model Order {
   payments Payment[]
   report   Report?
   call     ConsultationCall?
+  services OrderService[]
 
   @@index([status])
   @@index([createdAt])
   @@index([customerId])
   @@map("orders")
+}
+
+/// Suivi d'avancement d'un service demandé sur une commande.
+model OrderService {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  /// Clé contrôlée du catalogue de services.
+  serviceKey    String
+  status        ServiceStatus @default(NOT_STARTED)
+  internalNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderId, serviceKey])
+  @@map("order_services")
 }
 
 // ---------------------------------------------------------------------------

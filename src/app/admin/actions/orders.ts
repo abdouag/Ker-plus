@@ -8,6 +8,7 @@ import { recordAudit } from '@/lib/audit';
 import { canTransition, OrderError } from '@/lib/services/orders';
 import { confirmPaymentManually, updatePaymentStatus, PaymentError } from '@/lib/services/payments';
 import { callStatusSchema, manualPaymentSchema, orderStatusSchema } from '@/lib/validation/schemas';
+import { SERVICE_STATUSES, type ServiceStatusKey } from '@/lib/content/services';
 import { readText, toActionState, type ActionState } from './shared';
 
 /**
@@ -136,6 +137,48 @@ export async function updateOrderStatusAction(
     return { ok: true, message: 'Statut de la commande mis à jour.' };
   } catch (error) {
     return toActionState(error, 'mise à jour du statut de commande');
+  }
+}
+
+/** Statut d'avancement d'un service demandé sur une commande. */
+export async function updateOrderServiceStatusAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  try {
+    await assertCsrf(formData);
+    const admin = await requireRole('MANAGER');
+
+    const orderServiceId = readText(formData, 'orderServiceId', 64);
+    const status = readText(formData, 'status', 30) as ServiceStatusKey;
+    if (!SERVICE_STATUSES.includes(status)) {
+      return { ok: false, error: 'Statut de service inconnu.' };
+    }
+
+    const before = await prisma.orderService.findUnique({ where: { id: orderServiceId } });
+    if (!before) return { ok: false, error: 'Service introuvable sur cette commande.' };
+
+    const after = await prisma.orderService.update({
+      where: { id: orderServiceId },
+      data: {
+        status,
+        internalNotes: readText(formData, 'serviceNotes', 1000) || null,
+      },
+    });
+
+    await recordAudit({
+      adminUserId: admin.id,
+      action: 'order.service.status',
+      entityType: 'OrderService',
+      entityId: orderServiceId,
+      before: { status: before.status, internalNotes: before.internalNotes },
+      after: { status: after.status, internalNotes: after.internalNotes },
+    });
+
+    revalidatePath(`/admin/commandes/${before.orderId}`);
+    return { ok: true, message: 'Statut du service mis à jour.' };
+  } catch (error) {
+    return toActionState(error, 'mise à jour du statut de service');
   }
 }
 

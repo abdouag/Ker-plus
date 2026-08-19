@@ -18,6 +18,13 @@ import {
 } from '@/lib/settings';
 import { getActivePaymentProvider } from '@/lib/payments/registry';
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '@/lib/services/orders';
+import {
+  getServiceByKey,
+  serviceLabel,
+  SERVICE_STATUS_LABELS,
+  SERVICE_STATUS_TONES,
+} from '@/lib/content/services';
+import { SERVICE_ICONS } from '@/components/services/service-icons';
 import { PaymentTracker } from '@/components/order/PaymentTracker';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +63,7 @@ export default async function OrderConfirmationPage({
       customer: true,
       simulation: true,
       payments: { orderBy: { createdAt: 'desc' } },
+      services: { orderBy: { createdAt: 'asc' } },
     },
   });
 
@@ -183,6 +191,58 @@ export default async function OrderConfirmationPage({
                       </p>
                     </div>
                   ) : null}
+                </CardBody>
+              </Card>
+            ) : null}
+            {order.requestedServices.length > 0 ? (
+              <Card>
+                <CardHeader
+                  title="Services de mon projet"
+                  description="Suivi des services demandés lors de votre commande."
+                />
+                <CardBody className="p-0 sm:p-0">
+                  <ul className="divide-y divide-sand-200">
+                    {order.requestedServices.map((key) => {
+                      const definition = getServiceByKey(key);
+                      const Icon = definition ? SERVICE_ICONS[definition.icon] : null;
+                      const tracking = order.services.find(
+                        (service) => service.serviceKey === key,
+                      );
+                      return (
+                        <li key={key} className="flex items-start gap-3 px-5 py-4">
+                          {Icon ? (
+                            <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-forest-50 text-forest-600">
+                              <Icon width={18} height={18} />
+                            </span>
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-forest-700">
+                              {serviceLabel(key)}
+                            </p>
+                            {tracking?.status === 'DOCUMENT_AVAILABLE' ? (
+                              <p className="mt-1 text-xs text-ink-muted">
+                                Un document est prêt : notre équipe vous le transmet par un lien
+                                sécurisé.
+                              </p>
+                            ) : key === 'needs_guidance' ? (
+                              <p className="mt-1 text-xs text-ink-muted">
+                                Notre équipe vous orientera lors de l’appel conseil.
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-xs text-ink-muted">
+                                Aucun document disponible pour le moment.
+                              </p>
+                            )}
+                          </div>
+                          {tracking ? (
+                            <Badge tone={SERVICE_STATUS_TONES[tracking.status]}>
+                              {SERVICE_STATUS_LABELS[tracking.status]}
+                            </Badge>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </CardBody>
               </Card>
             ) : null}

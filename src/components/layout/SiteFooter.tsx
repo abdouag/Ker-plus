@@ -28,6 +28,11 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/services" className="hover:text-forest-600">
+                Nos services
+              </Link>
+            </li>
+            <li>
               <Link href="/#methode" className="hover:text-forest-600">
                 Comment ça marche
               </Link>

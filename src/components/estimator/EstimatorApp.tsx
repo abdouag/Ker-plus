@@ -24,6 +24,8 @@ import { SelectField } from '@/components/ui/Field';
 import { ResultCard } from './ResultCard';
 import { DisclaimerPanel } from './DisclaimerPanel';
 import { LeadForm } from './LeadForm';
+import { getServiceBySlug, type ServiceKey } from '@/lib/content/services';
+import { requestedServicesSchema } from '@/lib/validation/schemas';
 import type { EstimatorReferentials, EstimatorTexts } from './types';
 
 interface EstimatorAppProps {
@@ -79,6 +81,7 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
   );
 
   const [simulation, setSimulation] = useState<PersistedSimulation | null>(null);
+  const [selectedServices, setSelectedServices] = useState<ServiceKey[]>([]);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [startedTracked, setStartedTracked] = useState(false);
   const [createdAt, setCreatedAt] = useState<Date>(() => new Date());
@@ -109,6 +112,36 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.estimatorViewed);
   }, []);
+
+  /**
+   * Restaure la sélection de services (sessionStorage), puis applique la
+   * présélection portée par l'URL (« Ajouter à mon projet » depuis les pages
+   * services : /?service=<slug>#estimateur).
+   */
+  useEffect(() => {
+    let restored: ServiceKey[] = [];
+    try {
+      const raw = window.sessionStorage.getItem('kerplus-services');
+      if (raw) restored = requestedServicesSchema.parse(JSON.parse(raw));
+    } catch {
+      // Valeur illisible ou obsolète : on repart d'une sélection vide.
+    }
+    const slug = new URLSearchParams(window.location.search).get('service');
+    const preselected = slug ? getServiceBySlug(slug) : undefined;
+    if (preselected && !restored.includes(preselected.key)) {
+      restored = [...restored.filter((key) => key !== 'needs_guidance'), preselected.key];
+    }
+    if (restored.length > 0) setSelectedServices(restored);
+  }, []);
+
+  const handleServicesChange = (next: ServiceKey[]) => {
+    setSelectedServices(next);
+    try {
+      window.sessionStorage.setItem('kerplus-services', JSON.stringify(next));
+    } catch {
+      // Stockage indisponible (navigation privée) : la sélection reste en mémoire.
+    }
+  };
 
   const markStarted = useCallback(() => {
     if (startedTracked) return;
@@ -444,6 +477,8 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
           <LeadForm
             amount={texts.reportPrice}
             deliveryHours={texts.deliveryHours}
+            selectedServices={selectedServices}
+            onServicesChange={handleServicesChange}
             estimation={{
               projectTypeId,
               surface,

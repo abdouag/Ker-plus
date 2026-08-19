@@ -79,6 +79,11 @@ test('parcours complet jusqu’à la confirmation de commande', async ({ page })
   await page.getByRole('radio', { name: /Villa duplex/ }).check();
   await page.getByTestId('cta-report').click();
 
+  // Étape services : sélection multiple, reflétée dans le résumé du formulaire.
+  await page.locator('input[name="requestedServices"][value="architectural_design"]').check();
+  await page.locator('input[name="requestedServices"][value="construction_monitoring"]').check();
+  await expect(page.getByText('Services sélectionnés pour votre projet')).toBeVisible();
+
   await page.locator('input[name="firstName"]').fill('Awa');
   await page.locator('input[name="lastName"]').fill('Ndiaye');
   await page.locator('input[name="phone"]').fill('77 123 45 67');
@@ -98,6 +103,60 @@ test('parcours complet jusqu’à la confirmation de commande', async ({ page })
   await expect(page.getByRole('link', { name: /Payer .* avec Wave/ })).toBeVisible();
   await expect(page.getByText('awa.e2e@example.com')).toBeVisible();
   await expect(page.getByText('Villa duplex')).toBeVisible();
+
+  // Les services demandés apparaissent sur la confirmation, avec leur statut.
+  await expect(page.getByRole('heading', { name: 'Services de mon projet' })).toBeVisible();
+  await expect(page.getByText('Conception architecturale')).toBeVisible();
+  await expect(page.getByText('Suivi de chantier')).toBeVisible();
+  await expect(page.getByText('Non démarré').first()).toBeVisible();
+});
+
+test('la sélection de services survit au retour en arrière', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('cta-report').click();
+  await page.locator('input[name="requestedServices"][value="3d_visualization"]').check();
+
+  // Retour à l'estimation : le formulaire est replié…
+  await page.getByRole('button', { name: 'Modifier mon estimation' }).first().click();
+  await page.getByTestId('cta-report').click();
+  // …et la sélection est toujours là.
+  await expect(
+    page.locator('input[name="requestedServices"][value="3d_visualization"]'),
+  ).toBeChecked();
+
+  // « Conseillez-moi » est exclusif.
+  await page.locator('input[name="requestedServices"][value="needs_guidance"]').check();
+  await expect(
+    page.locator('input[name="requestedServices"][value="3d_visualization"]'),
+  ).not.toBeChecked();
+});
+
+test('la page /services présente les six services', async ({ page }) => {
+  await page.goto('/services');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText(
+    'Tous les services nécessaires',
+  );
+  for (const service of [
+    'Conception architecturale',
+    'Étude béton armé',
+    'Études des lots techniques',
+    'Visualisation 3D',
+    'Assistance technique',
+    'Suivi de chantier',
+  ]) {
+    await expect(page.getByRole('heading', { name: service, exact: true })).toBeVisible();
+  }
+  // Aucun prix sur la page services.
+  const body = (await page.locator('main').innerText()) ?? '';
+  expect(body).not.toMatch(/FCFA|\/m²/);
+});
+
+test('« Ajouter à mon projet » présélectionne le service dans le formulaire', async ({ page }) => {
+  await page.goto('/?service=etude-beton-arme#estimateur');
+  await page.getByTestId('cta-report').click();
+  await expect(
+    page.locator('input[name="requestedServices"][value="structural_engineering"]'),
+  ).toBeChecked();
 });
 
 test('la validation du formulaire signale les champs manquants', async ({ page }) => {

@@ -198,3 +198,67 @@ export function IconHardHat(props: IconProps) {
     </Base>
   );
 }
+
+/** Plan roulé — conception architecturale. */
+export function IconBlueprint(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="4" y="5.5" width="16" height="13" rx="1.5" />
+      <path d="M8.5 5.5v13M8.5 12H20" />
+      <path d="M12 8.5h4.5M12 15.5h2.5" />
+    </Base>
+  );
+}
+
+/** Poteaux et poutre — étude béton armé. */
+export function IconColumns(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M3.5 5h17M3.5 20h17" />
+      <path d="M6.5 5v15M12 5v15M17.5 5v15" />
+      <path d="M5 8h3M10.5 12h3M16 16h3" />
+    </Base>
+  );
+}
+
+/** Clé à molette — lots techniques (plomberie, électricité). */
+export function IconWrench(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M14.5 6.5a4 4 0 0 0-5.4 4.8L4 16.4a2 2 0 1 0 2.8 2.9l5.2-5.1a4 4 0 0 0 4.9-5.3l-2.6 2.6-2.3-.6-.6-2.3 3.1-3Z" />
+    </Base>
+  );
+}
+
+/** Cube isométrique — visualisation 3D. */
+export function IconCube(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3Z" />
+      <path d="M4 7.5 12 12l8-4.5M12 12v9" />
+    </Base>
+  );
+}
+
+/** Casque micro — assistance technique. */
+export function IconHeadset(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4.5 13a7.5 7.5 0 0 1 15 0" />
+      <rect x="3.5" y="12.5" width="4" height="6" rx="1.6" />
+      <rect x="16.5" y="12.5" width="4" height="6" rx="1.6" />
+      <path d="M19 18.5c0 1.7-1.6 2.5-3.5 2.5h-2" />
+    </Base>
+  );
+}
+
+/** Point d'interrogation cerclé — « conseillez-moi ». */
+export function IconHelp(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 3c-.8.5-1 .9-1 1.9" />
+      <path d="M12 17h.01" />
+    </Base>
+  );
+}

@@ -244,7 +244,29 @@ les montants sont saisis et validés par Kerplus.
 
 ---
 
-## 9. Paramètres administrables
+## 9. Services du projet
+
+Le client peut sélectionner, à la commande, les services dont il a besoin :
+conception architecturale, étude béton armé, lots techniques (plomberie,
+électricité), visualisation 3D, assistance technique, suivi de chantier — ou
+« Je ne sais pas encore — conseillez-moi ».
+
+- **Contenus centralisés** dans `src/lib/content/services.ts` (clé contrôlée,
+  slug, descriptions, prestations, livrables, étapes, ordre, actif) : textes et
+  ordre se modifient sans toucher aux composants. Les clés persistées en base
+  ne doivent jamais être renommées sans migration.
+- **Persistance** : `Order.requestedServices` (tableau de clés) et une ligne de
+  suivi `order_services` par service réel, avec cinq statuts : Non démarré,
+  Informations requises, En cours, Document disponible, Terminé.
+- **Pilotage** : la fiche commande de l'administration expose chaque service
+  avec son statut modifiable et une note interne ; le client voit l'avancement
+  sur sa page de commande. Aucun prix n'est affiché sur les services.
+- **Vitrine** : section « Nos services » sur l'accueil et page `/services`
+  détaillée (objectif, prestations, étapes, livrables) ; « Ajouter à mon
+  projet » présélectionne le service dans le formulaire
+  (`/?service=<slug>#estimateur`).
+
+## 10. Paramètres administrables
 
 `/admin/parametres` permet de gérer, sans modification de code :
 
@@ -265,7 +287,7 @@ modifie jamais une estimation passée.
 
 ---
 
-## 10. Sécurité
+## 11. Sécurité
 
 - Sessions administrateur : JWT HS256, cookie `HttpOnly` + `Secure` +
   `SameSite=Lax`, durée configurable.
@@ -286,7 +308,7 @@ modifie jamais une estimation passée.
 
 ---
 
-## 11. Déploiement
+## 12. Déploiement
 
 ### Mise en ligne rapide pour un testeur (domaine temporaire)
 
@@ -372,7 +394,7 @@ pg_restore -d "$DATABASE_URL" --clean --if-exists kerplus-2026-01-31.dump
 
 ---
 
-## 12. Structure du projet
+## 13. Structure du projet
 
 ```
 prisma/                     schéma, migrations, seed idempotent
@@ -400,7 +422,7 @@ e2e/                        parcours de bout en bout (Playwright)
 
 ---
 
-## 13. Points nécessitant une intervention de Kerplus
+## 14. Points nécessitant une intervention de Kerplus
 
 - **Identifiants Wave** : le mode API reste inactif tant que la documentation et
   les clés officielles ne sont pas fournies.

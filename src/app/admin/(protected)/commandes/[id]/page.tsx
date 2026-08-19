@@ -13,9 +13,16 @@ import {
   resendOrderEmailAction,
   updateConsultationCallAction,
   updateOrderNotesAction,
+  updateOrderServiceStatusAction,
   updateOrderStatusAction,
   updatePaymentStatusAction,
 } from '@/app/admin/actions/orders';
+import {
+  serviceLabel,
+  SERVICE_STATUSES,
+  SERVICE_STATUS_LABELS,
+  SERVICE_STATUS_TONES,
+} from '@/lib/content/services';
 import {
   generateReportPdfAction,
   importReportPdfAction,
@@ -67,6 +74,7 @@ export default async function AdminOrderDetailPage({
       payments: { orderBy: { createdAt: 'desc' } },
       report: { include: { items: { orderBy: { displayOrder: 'asc' } }, preparedBy: true } },
       call: true,
+      services: { orderBy: { createdAt: 'asc' } },
     },
   });
 
@@ -179,6 +187,88 @@ export default async function AdminOrderDetailPage({
               </CardBody>
             ) : null}
           </Card>
+
+          {/* Services demandés */}
+          {order.requestedServices.length > 0 ? (
+            <Card>
+              <CardHeader
+                title="Services du projet"
+                description="Services demandés par le client à la commande, avec leur avancement."
+              />
+              <CardBody className="space-y-4">
+                {order.requestedServices.includes('needs_guidance') ? (
+                  <Alert tone="warning" title="Le client demande à être conseillé">
+                    Orientez-le vers les services utiles lors de l’appel conseil, puis ajustez la
+                    commande si nécessaire.
+                  </Alert>
+                ) : null}
+
+                {order.services.length === 0 &&
+                !order.requestedServices.includes('needs_guidance') ? (
+                  <p className="text-sm text-ink-muted">
+                    Aucun service à suivre sur cette commande.
+                  </p>
+                ) : null}
+
+                {order.services.map((service) => (
+                  <div
+                    key={service.id}
+                    className="rounded-xl border border-sand-200 bg-sand-50 p-4"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold text-forest-700">
+                        {serviceLabel(service.serviceKey)}
+                      </p>
+                      <Badge tone={SERVICE_STATUS_TONES[service.status]}>
+                        {SERVICE_STATUS_LABELS[service.status]}
+                      </Badge>
+                      <span className="ml-auto text-xs text-ink-muted">
+                        Mis à jour le {formatDateTime(service.updatedAt)}
+                      </span>
+                    </div>
+
+                    <ActionForm
+                      action={updateOrderServiceStatusAction}
+                      csrfToken={csrfToken}
+                      hidden={{ orderServiceId: service.id }}
+                      submitLabel="Mettre à jour"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-3"
+                    >
+                      <div className="grid gap-2 sm:grid-cols-[220px_minmax(0,1fr)]">
+                        <select
+                          name="status"
+                          defaultValue={service.status}
+                          className="rounded-xl border border-sand-300 bg-white px-3 py-2 text-sm"
+                          aria-label={`Statut du service ${serviceLabel(service.serviceKey)}`}
+                        >
+                          {SERVICE_STATUSES.map((status) => (
+                            <option key={status} value={status}>
+                              {SERVICE_STATUS_LABELS[status]}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          name="serviceNotes"
+                          defaultValue={service.internalNotes ?? ''}
+                          placeholder="Note interne (facultatif)"
+                          className="rounded-xl border border-sand-300 bg-white px-3 py-2 text-sm"
+                          aria-label={`Note interne du service ${serviceLabel(service.serviceKey)}`}
+                        />
+                      </div>
+                    </ActionForm>
+
+                    <p className="mt-2 text-xs text-ink-muted">
+                      {service.status === 'DOCUMENT_AVAILABLE'
+                        ? 'Transmettez le document via le rapport de la commande ou un lien sécurisé.'
+                        : 'Aucun document associé pour le moment.'}
+                    </p>
+                  </div>
+                ))}
+              </CardBody>
+            </Card>
+          ) : null}
 
           {/* Rapport */}
           <Card>

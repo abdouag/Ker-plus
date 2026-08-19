@@ -154,6 +154,56 @@ describe('création de commande', () => {
     expect(result.payment.status).toBe('PENDING');
   });
 
+  it('persiste les services demandés et crée leur suivi', async () => {
+    const result = await createOrder(
+      parsePayload({
+        requestedServices: ['architectural_design', '3d_visualization', 'architectural_design'],
+      }),
+    );
+
+    // Dédupliqué et persisté sur la commande.
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: result.order.id },
+      include: { services: true },
+    });
+    expect(order.requestedServices).toEqual(['architectural_design', '3d_visualization']);
+
+    // Une ligne de suivi par service, au statut initial « Non démarré ».
+    expect(order.services).toHaveLength(2);
+    expect(order.services.map((s) => s.serviceKey).sort()).toEqual([
+      '3d_visualization',
+      'architectural_design',
+    ]);
+    expect(order.services.every((s) => s.status === 'NOT_STARTED')).toBe(true);
+  });
+
+  it('« conseillez-moi » est enregistré sans ligne de suivi', async () => {
+    const result = await createOrder(parsePayload({ requestedServices: ['needs_guidance'] }));
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: result.order.id },
+      include: { services: true },
+    });
+    expect(order.requestedServices).toEqual(['needs_guidance']);
+    expect(order.services).toHaveLength(0);
+  });
+
+  it('rejette une clé de service hors catalogue', () => {
+    const parsed = createOrderSchema.safeParse(
+      orderPayload(referentials, { requestedServices: ['architectural_design', 'piscine'] }),
+    );
+    expect(parsed.success).toBe(false);
+  });
+
+  it('reste rétrocompatible : une commande sans services a un tableau vide', async () => {
+    const result = await createOrder(parsePayload());
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id: result.order.id },
+      include: { services: true },
+    });
+    expect(order.requestedServices).toEqual([]);
+    expect(order.services).toHaveLength(0);
+  });
+
   it('privilégie le lien de paiement défini dans l’administration', async () => {
     await setSetting(SETTING_KEYS.WAVE_PAYMENT_URL, 'https://wave.com/pay/kerplus-premium');
     const result = await createOrder(parsePayload());

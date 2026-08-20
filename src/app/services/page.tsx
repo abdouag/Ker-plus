@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   alternates: { canonical: '/services' },
 };
 
+// Le pied de page lit les coordonnées en base : rendu à la demande, jamais
+// pré-généré au build (aucune base n'est joignable pendant l'image Docker).
+export const dynamic = 'force-dynamic';
+
 /**
  * Page détaillée des services. Une page unique avec une fiche complète par
  * service (ancrée sur son slug) : chaque fiche porte l'objectif, les

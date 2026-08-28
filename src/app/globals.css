@@ -11,6 +11,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* L'en-tête est collant : les ancres (#estimateur…) ne doivent pas passer dessous. */
+    scroll-padding-top: 4.5rem;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -59,6 +61,31 @@
 }
 
 @layer components {
+  /* Trame « plan d'architecte » posée sur les bandeaux vert forêt. */
+  .kp-blueprint-grid {
+    background-image:
+      linear-gradient(rgba(245, 239, 230, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 239, 230, 0.06) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+  }
+
+  /* Entrée en douceur du bandeau d'accueil (neutralisée si reduced-motion). */
+  .kp-fade-up {
+    animation: kp-fade-up 0.55s ease-out both;
+  }
+
+  @keyframes kp-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Slider de surface — apparence cohérente sur Chrome, Safari, Firefox, Edge. */
   .kp-range {
     @apply h-2 w-full cursor-pointer appearance-none rounded-full bg-sand-300;

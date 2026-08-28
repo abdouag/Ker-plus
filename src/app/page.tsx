@@ -5,6 +5,7 @@ import { ConsentBanner } from '@/components/layout/ConsentBanner';
 import { EstimatorApp } from '@/components/estimator/EstimatorApp';
 import { RealisationsSection } from '@/components/home/RealisationsSection';
 import { ServicesSection } from '@/components/home/ServicesSection';
+import { HeroIllustration } from '@/components/home/HeroIllustration';
 import { LinkButton } from '@/components/ui/Button';
 import { IconBolt, IconEye, IconFileText, IconPhone } from '@/components/ui/icons';
 import { Card, CardBody } from '@/components/ui/Card';
@@ -156,37 +157,45 @@ export default async function HomePage() {
 
       <main id="contenu">
         {/* Bandeau d'accroche */}
-        <section className="bg-forest-600 text-white">
-          <div className="mx-auto max-w-content px-4 py-10 sm:px-6 sm:py-14">
-            <p className="text-sm font-semibold uppercase tracking-wide text-ember-200">
-              Kerplus.sn — construction au Sénégal
-            </p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
-              Construisez votre maison avec une vision claire dès le départ.
-            </h1>
-            <p className="mt-4 max-w-2xl text-base leading-relaxed text-forest-100 sm:text-lg">
-              Kerplus vous accompagne dans la préparation, l’estimation et le suivi de votre projet
-              de construction au Sénégal, simplement et en toute transparence.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <LinkButton href="#estimateur" size="lg">
-                Estimer mon projet
-              </LinkButton>
-              <LinkButton
-                href="#methode"
-                size="lg"
-                className="border border-forest-400 bg-forest-700/40 text-white hover:bg-forest-700/70 active:bg-forest-700"
-              >
-                Découvrir Kerplus
-              </LinkButton>
+        <section className="relative overflow-hidden bg-forest-600 text-white">
+          {/* Trame « plan d'architecte » en arrière-plan, purement décorative. */}
+          <div aria-hidden="true" className="kp-blueprint-grid absolute inset-0" />
+          <div className="relative mx-auto grid max-w-content gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-center">
+            <div>
+              <p className="kp-fade-up text-sm font-semibold uppercase tracking-wide text-ember-200">
+                Kerplus.sn — construction au Sénégal
+              </p>
+              <h1 className="kp-fade-up mt-3 max-w-3xl text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl [animation-delay:80ms]">
+                Construisez votre maison avec une vision claire dès le départ.
+              </h1>
+              <p className="kp-fade-up mt-4 max-w-2xl text-base leading-relaxed text-forest-100 sm:text-lg [animation-delay:160ms]">
+                Kerplus vous accompagne dans la préparation, l’estimation et le suivi de votre
+                projet de construction au Sénégal, simplement et en toute transparence.
+              </p>
+              <div className="kp-fade-up mt-7 flex flex-col gap-3 sm:flex-row [animation-delay:240ms]">
+                <LinkButton href="#estimateur" size="lg">
+                  Estimer mon projet
+                </LinkButton>
+                <LinkButton
+                  href="#methode"
+                  size="lg"
+                  className="border border-forest-400 bg-forest-700/40 text-white hover:bg-forest-700/70 active:bg-forest-700"
+                >
+                  Découvrir Kerplus
+                </LinkButton>
+              </div>
             </div>
-            <dl className="mt-8 grid gap-4 sm:grid-cols-3">
+            <HeroIllustration className="kp-fade-up hidden w-full max-w-[380px] text-sand-100 [animation-delay:200ms] lg:block" />
+            <dl className="kp-fade-up grid gap-4 sm:grid-cols-3 lg:col-span-2 [animation-delay:320ms]">
               {[
                 ['Estimation immédiate', 'Résultat instantané, sans inscription'],
                 ['Rapport détaillé', `Livré sous ${deliveryHours} h après paiement`],
                 ['Appel conseil', `${callDuration} minutes avec un professionnel`],
               ].map(([term, description]) => (
-                <div key={term} className="rounded-xl bg-forest-700/60 px-4 py-3">
+                <div
+                  key={term}
+                  className="rounded-xl border border-forest-500/60 bg-forest-700/60 px-4 py-3"
+                >
                   <dt className="text-sm font-bold text-white">{term}</dt>
                   <dd className="mt-0.5 text-sm text-forest-100">{description}</dd>
                 </div>
@@ -251,21 +260,28 @@ export default async function HomePage() {
           <h2 id="methode-titre" className="mt-2 text-2xl font-extrabold sm:text-3xl">
             Trois étapes, une vision claire
           </h2>
-          <ol className="mt-8 grid gap-4 md:grid-cols-3">
-            {STEPS.map((step, index) => (
-              <li key={step.title}>
-                <Card className="h-full">
-                  <CardBody>
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-ember-400 font-bold text-forest-800">
-                      {index + 1}
-                    </span>
-                    <h3 className="mt-3 text-base font-bold">{step.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{step.text}</p>
-                  </CardBody>
-                </Card>
-              </li>
-            ))}
-          </ol>
+          <div className="relative mt-8">
+            {/* Fil conducteur reliant les trois étapes (décoratif, desktop). */}
+            <div
+              aria-hidden="true"
+              className="absolute left-[16%] right-[16%] top-10 hidden border-t-2 border-dashed border-sand-300 md:block"
+            />
+            <ol className="relative grid gap-4 md:grid-cols-3">
+              {STEPS.map((step, index) => (
+                <li key={step.title}>
+                  <Card className="h-full transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg">
+                    <CardBody>
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-ember-400 font-bold text-forest-800 ring-4 ring-white">
+                        {index + 1}
+                      </span>
+                      <h3 className="mt-3 text-base font-bold">{step.title}</h3>
+                      <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{step.text}</p>
+                    </CardBody>
+                  </Card>
+                </li>
+              ))}
+            </ol>
+          </div>
         </section>
 
         {/* Services */}
@@ -356,8 +372,9 @@ export default async function HomePage() {
         </section>
 
         {/* Appel à l'action final */}
-        <section aria-labelledby="cta-final-titre" className="bg-forest-600">
-          <div className="mx-auto flex max-w-content flex-col items-start gap-6 px-4 py-14 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between">
+        <section aria-labelledby="cta-final-titre" className="relative overflow-hidden bg-forest-600">
+          <div aria-hidden="true" className="kp-blueprint-grid absolute inset-0" />
+          <div className="relative mx-auto flex max-w-content flex-col items-start gap-6 px-4 py-14 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
               <h2 id="cta-final-titre" className="text-2xl font-extrabold text-white sm:text-3xl">
                 Votre projet mérite un budget posé sur des bases sérieuses.

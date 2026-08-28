@@ -37,6 +37,20 @@ describe('normalizePhone', () => {
       expect(isValidPhone(input), input).toBe(false);
     });
   });
+
+  it('rejette un numéro sénégalais incomplet (8 chiffres)', () => {
+    ['77123456', '77 12 34 56', '3386912'].forEach((input) => {
+      expect(normalizePhone(input), input).toBeNull();
+      expect(isValidPhone(input), input).toBe(false);
+    });
+  });
+
+  it('exige le format international explicite pour les numéros hors Sénégal', () => {
+    // Sans + ni 00, impossible de distinguer un indicatif étranger d'une faute de frappe.
+    expect(normalizePhone('33612345678')).toBeNull();
+    expect(normalizePhone('+33612345678')).not.toBeNull();
+    expect(normalizePhone('0033612345678')).not.toBeNull();
+  });
 });
 
 describe('affichage', () => {

@@ -88,6 +88,7 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
 
   const leadFormRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const estimatorRef = useRef<HTMLDivElement>(null);
 
   const projectType = projectTypes.find((item) => item.id === projectTypeId) ?? projectTypes[0];
   const cityZone = cityZones.find((item) => item.id === cityZoneId) ?? cityZones[0];
@@ -224,6 +225,23 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
     });
   };
 
+  /**
+   * Repart d'une estimation vierge sans recharger la page — utile pour
+   * comparer plusieurs scénarios (finitions, villes, surfaces).
+   */
+  const startNewEstimation = () => {
+    setProjectTypeId(projectTypes[0]?.id ?? '');
+    setSurface(SURFACE_DEFAULT);
+    setSurfaceText(String(SURFACE_DEFAULT));
+    setCityZoneId(cityZones[0]?.id ?? '');
+    setFinishLevelId(finishLevels[1]?.id ?? finishLevels[0]?.id ?? '');
+    handleServicesChange([]);
+    setShowLeadForm(false);
+    requestAnimationFrame(() => {
+      estimatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const closeLeadForm = () => {
     setShowLeadForm(false);
     requestAnimationFrame(() => {
@@ -240,7 +258,10 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start">
+    <div
+      ref={estimatorRef}
+      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start"
+    >
       <Card as="section" className="overflow-hidden">
         <CardHeader
           title="Estimez le coût de votre construction"
@@ -469,6 +490,15 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
             La commande de rapport détaillé est momentanément indisponible.
           </Alert>
         )}
+
+        <button
+          type="button"
+          onClick={startNewEstimation}
+          data-testid="new-estimation"
+          className="mx-auto block text-xs font-semibold text-ink-muted underline underline-offset-4 transition-colors hover:text-forest-600"
+        >
+          Faire une nouvelle estimation
+        </button>
       </div>
 
       {/* Formulaire client */}

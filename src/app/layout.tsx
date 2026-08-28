@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: '%s | Kerplus.sn',
   },
   description:
-    'Estimez en moins de 2 minutes le coût de construction de votre maison, villa ou immeuble au Sénégal, puis commandez un rapport technique détaillé.',
+    'Estimez gratuitement, en 2 minutes et sans engagement, le coût de construction de votre maison, villa ou immeuble au Sénégal, puis commandez un rapport technique détaillé.',
   applicationName: 'Estimateur Kerplus',
   authors: [{ name: 'Kerplus.sn' }],
   keywords: [
@@ -44,15 +44,16 @@ export const metadata: Metadata = {
     locale: 'fr_SN',
     url: env.siteUrl,
     siteName: 'Kerplus.sn',
-    title: 'Estimateur Kerplus — coût de construction au Sénégal',
+    title: 'Kerplus — Combien coûte votre maison ?',
     description:
-      'Calculez le budget de votre projet de construction au Sénégal et recevez un rapport technique détaillé sous 48 h.',
+      'Estimez gratuitement le budget de votre projet de construction au Sénégal, en 2 minutes, sans engagement.',
   },
   twitter: {
-    card: 'summary',
-    title: 'Estimateur Kerplus — coût de construction au Sénégal',
+    // L'image d'aperçu (src/app/opengraph-image.tsx) est reprise automatiquement.
+    card: 'summary_large_image',
+    title: 'Kerplus — Combien coûte votre maison ?',
     description:
-      'Estimation immédiate du coût de construction au Sénégal et rapport technique détaillé.',
+      'Estimez gratuitement le budget de votre projet de construction au Sénégal, en 2 minutes, sans engagement.',
   },
   formatDetection: { telephone: true, address: false, email: false },
 };

@@ -56,8 +56,10 @@ export function normalizePhone(input: string): NormalizedPhone | null {
     };
   }
 
-  // Diaspora / autres indicatifs : longueur E.164 plausible (8 à 15 chiffres).
-  if (digits.length >= 8 && digits.length <= 15) {
+  // Diaspora / autres indicatifs : uniquement au format international explicite
+  // (+ ou 00), longueur E.164 plausible. Sans cet indicatif, un numéro
+  // sénégalais incomplet (8 chiffres) serait accepté à tort.
+  if (hasPlus && digits.length >= 8 && digits.length <= 15) {
     return { value: `+${digits}`, senegalese: false };
   }
 

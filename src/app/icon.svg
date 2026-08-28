@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Favicon Kerplus : carré vert forêt, K sable, trait orange de la charte. -->
+  <rect width="100" height="100" rx="22" fill="#1A4D2E"/>
+  <text x="50" y="66" font-size="56" font-family="Georgia, 'Times New Roman', serif" font-weight="700" fill="#F5EFE6" text-anchor="middle" dominant-baseline="middle">K</text>
+  <rect x="32" y="80" width="36" height="7" rx="3.5" fill="#FF8C42"/>
+</svg>

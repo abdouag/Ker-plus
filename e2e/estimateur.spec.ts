@@ -64,6 +64,20 @@ test('les bornes de surface sont respectées', async ({ page }) => {
   await expect(surfaceInput).toHaveValue('500');
 });
 
+test('« Faire une nouvelle estimation » réinitialise le formulaire sans recharger', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const surfaceInput = page.locator('#surface-number');
+
+  await surfaceInput.fill('300');
+  await surfaceInput.blur();
+  await expect(surfaceInput).toHaveValue('300');
+
+  await page.getByTestId('new-estimation').click();
+  await expect(surfaceInput).toHaveValue('150');
+});
+
 test('l’avertissement et les exclusions sont affichés', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText(/ne constitue ni un devis contractuel/)).toBeVisible();

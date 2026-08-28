@@ -45,7 +45,14 @@ const phoneSchema = z
   .trim()
   .min(6, 'Numéro de téléphone trop court.')
   .max(24, 'Numéro de téléphone trop long.')
-  .refine(isValidPhone, 'Numéro de téléphone invalide.')
+  .refine(
+    (value) => value.replace(/\D/g, '').length >= 8,
+    'Ce numéro semble incomplet, merci de le vérifier.',
+  )
+  .refine(
+    isValidPhone,
+    'Numéro invalide. Pour un numéro hors Sénégal, utilisez le format international (+…).',
+  )
   .transform((value) => normalizePhone(value)?.value ?? value);
 
 const nameSchema = z

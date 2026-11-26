@@ -287,11 +287,35 @@ export default async function HomePage() {
         {/* Services */}
         <ServicesSection />
 
-        {/* Avantages */}
+        {/* Kër Care — après la construction, l'entretien */}
         <section
-          aria-labelledby="avantages-titre"
-          className="border-y border-sand-200 bg-sand-50"
+          aria-labelledby="ker-care-titre"
+          className="mx-auto max-w-content px-4 pb-14 sm:px-6"
         >
+          <div className="flex flex-col gap-5 rounded-2xl border border-forest-200 bg-forest-50 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-wide text-ember-500">
+                Nouveau · Kër Care
+              </p>
+              <h2
+                id="ker-care-titre"
+                className="mt-1 text-xl font-extrabold text-forest-700 sm:text-2xl"
+              >
+                Votre maison est construite ? Prenez-en soin sans attendre la panne.
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+                Carnet numérique du logement, rappels d’entretien et dépannages par des prestataires
+                vérifiés par Kerplus, avec devis à valider avant toute intervention.
+              </p>
+            </div>
+            <LinkButton href="/ker-care" variant="secondary" className="shrink-0">
+              Découvrir Kër Care
+            </LinkButton>
+          </div>
+        </section>
+
+        {/* Avantages */}
+        <section aria-labelledby="avantages-titre" className="border-y border-sand-200 bg-sand-50">
           <div className="mx-auto max-w-content px-4 py-14 sm:px-6 sm:py-16">
             <p className="text-sm font-semibold uppercase tracking-wide text-ember-500">
               Pourquoi Kerplus
@@ -372,7 +396,10 @@ export default async function HomePage() {
         </section>
 
         {/* Appel à l'action final */}
-        <section aria-labelledby="cta-final-titre" className="relative overflow-hidden bg-forest-600">
+        <section
+          aria-labelledby="cta-final-titre"
+          className="relative overflow-hidden bg-forest-600"
+        >
           <div aria-hidden="true" className="kp-blueprint-grid absolute inset-0" />
           <div className="relative mx-auto flex max-w-content flex-col items-start gap-6 px-4 py-14 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">

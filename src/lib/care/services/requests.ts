@@ -314,9 +314,13 @@ export async function getProviderMission(providerId: string, reference: string) 
   if (!request || !assignment) throw new CareError('Mission introuvable.', 404);
 
   const accepted = assignment.status === 'ACCEPTED';
-  const { property, requester, ...rest } = request;
+  const { property, requester, events, ...rest } = request;
   return {
     ...rest,
+    // Historique limité à la période de sa propre affectation : les
+    // affectations, refus et motifs concernant d'autres prestataires restent
+    // invisibles.
+    events: events.filter((event) => event.createdAt >= assignment.assignedAt),
     assignment,
     accepted,
     property: {

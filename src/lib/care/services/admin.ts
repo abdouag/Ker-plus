@@ -6,8 +6,17 @@ import { daysAgo } from '@/lib/dates';
 import { CareError } from '../errors';
 
 /** Filtres de la liste des demandes en administration. */
+/** Regroupements de statuts proposés en filtre (cartes « À traiter »). */
+export const STATUS_GROUPS = {
+  'a-affecter': { label: 'À affecter', statuses: ['SUBMITTED', 'SEARCHING'] },
+  'a-cloturer': { label: 'À clôturer ou contestées', statuses: ['VALIDATED', 'DISPUTED'] },
+} as const satisfies Record<string, { label: string; statuses: RequestStatus[] }>;
+
+export type StatusGroup = keyof typeof STATUS_GROUPS;
+
 export interface RequestFilters {
   status?: RequestStatus;
+  group?: StatusGroup;
   kind?: RequestKind;
   categoryId?: string;
   commune?: string;
@@ -21,7 +30,11 @@ export const ADMIN_PAGE_SIZE = 25;
 
 export async function listRequestsForAdmin(filters: RequestFilters) {
   const where: Prisma.ServiceRequestWhereInput = {
-    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.status
+      ? { status: filters.status }
+      : filters.group
+        ? { status: { in: [...STATUS_GROUPS[filters.group].statuses] } }
+        : {}),
     ...(filters.kind ? { kind: filters.kind } : {}),
     ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
     ...(filters.commune

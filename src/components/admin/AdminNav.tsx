@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/admin/commandes', label: 'Commandes' },
   { href: '/admin/paiements', label: 'Paiements' },
   { href: '/admin/rapports', label: 'Rapports' },
+  { href: '/admin/ker-care', label: 'Kër Care' },
   { href: '/admin/parametres', label: 'Paramètres' },
 ];
 

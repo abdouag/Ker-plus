@@ -9,12 +9,7 @@ import {
   SURFACE_STEP,
 } from '@/lib/estimation/constants';
 import { formatSurface, formatXOF } from '@/lib/format';
-import {
-  IconCheck,
-  IconHome,
-  IconHomeCheck,
-  IconSparkle,
-} from '@/components/ui/icons';
+import { IconCheck, IconHome, IconHomeCheck, IconSparkle } from '@/components/ui/icons';
 import { ANALYTICS_EVENTS } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/client';
 import { Button } from '@/components/ui/Button';
@@ -112,6 +107,31 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
 
   useEffect(() => {
     trackEvent(ANALYTICS_EVENTS.estimatorViewed);
+  }, []);
+
+  /**
+   * Préremplissage depuis l'URL (passerelle Kër Care « projet de rénovation ») :
+   * /?surface=<m²>&ville=<nom de ville>#estimateur. Valeurs ignorées si
+   * invalides ; le visiteur reste libre de tout modifier.
+   */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const surfaceParam = Number.parseInt(params.get('surface') ?? '', 10);
+    if (
+      Number.isFinite(surfaceParam) &&
+      surfaceParam >= SURFACE_MIN &&
+      surfaceParam <= SURFACE_MAX
+    ) {
+      setSurface(surfaceParam);
+      setSurfaceText(String(surfaceParam));
+    }
+    const cityParam = params.get('ville')?.trim().toLowerCase();
+    if (cityParam) {
+      const match = cityZones.find((zone) => zone.name.trim().toLowerCase() === cityParam);
+      if (match) setCityZoneId(match.id);
+    }
+    // Lecture unique au montage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
@@ -299,7 +319,11 @@ export function EstimatorApp({ referentials, texts }: EstimatorAppProps) {
                       />
                       <span className="text-sm font-semibold text-forest-700">{option.name}</span>
                       {selected ? (
-                        <IconCheck width={16} height={16} className="ml-auto shrink-0 text-forest-600" />
+                        <IconCheck
+                          width={16}
+                          height={16}
+                          className="ml-auto shrink-0 text-forest-600"
+                        />
                       ) : null}
                     </span>
                     {option.description ? (

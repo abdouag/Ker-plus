@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: '/services', label: 'Services' },
   { href: '/#realisations', label: 'Réalisations' },
   { href: '/#rapport', label: 'Rapport détaillé' },
+  { href: '/ker-care', label: 'Kër Care' },
 ];
 
 export function SiteHeader() {
@@ -24,7 +25,10 @@ export function SiteHeader() {
           <span className="text-xl font-extrabold text-ember-400">.sn</span>
         </Link>
 
-        <nav aria-label="Navigation principale" className="hidden items-center gap-6 md:flex">
+        <nav
+          aria-label="Navigation principale"
+          className="hidden items-center gap-4 md:flex lg:gap-6"
+        >
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}

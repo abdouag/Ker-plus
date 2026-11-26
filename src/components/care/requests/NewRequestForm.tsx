@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { RequestKind } from '@prisma/client';
 import { createRequestAction } from '@/app/ker-care/actions/client';
 import { CareForm } from '@/components/care/CareForm';
@@ -129,12 +130,12 @@ export function NewRequestForm({
         </SelectField>
         <p className="text-sm text-ink-muted">
           Un autre logement ?{' '}
-          <a
+          <Link
             href="/ker-care/mon-espace/maisons/nouvelle?retour=demande"
             className="font-semibold text-forest-600 underline"
           >
             Ajouter un logement
-          </a>
+          </Link>
         </p>
       </fieldset>
 

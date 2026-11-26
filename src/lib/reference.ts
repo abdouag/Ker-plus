@@ -35,7 +35,8 @@ export function buildReference(kind: ReferenceKind, date: Date = new Date()): st
   return `KP-${kind}-${formatDatePart(date)}-${randomSuffix()}`;
 }
 
-export const REFERENCE_PATTERN = /^KP-(EST|CMD|DEP|DEV)-\d{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4,8}$/;
+export const REFERENCE_PATTERN =
+  /^KP-(EST|CMD|DEP|DEV)-\d{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4,8}$/;
 
 export function isValidReference(reference: string): boolean {
   return REFERENCE_PATTERN.test(reference);

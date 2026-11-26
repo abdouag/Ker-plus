@@ -8,6 +8,11 @@ const nextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
   },
+  experimental: {
+    // Photos et documents Kër Care : 4 fichiers de 5 Mo maximum par envoi
+    // (contrôle fin dans src/lib/care/storage.ts).
+    serverActions: { bodySizeLimit: '22mb' },
+  },
   eslint: {
     dirs: ['src', 'scripts', 'prisma'],
   },
@@ -37,6 +42,14 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
           { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
         ],
+      },
+      {
+        source: '/ker-care/mon-espace/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+      {
+        source: '/ker-care/prestataire/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
       {
         source: '/admin/:path*',

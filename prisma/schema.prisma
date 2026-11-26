@@ -91,6 +91,10 @@ model AdminUser {
   preparedReports Report[]   @relation("ReportPreparedBy")
   auditLogs       AuditLog[]
 
+  // Kër Care
+  careAssignments  Assignment[]
+  careStatusEvents RequestStatusEvent[]
+
   @@index([active])
   @@map("admin_users")
 }
@@ -162,16 +166,16 @@ model CityZone {
 }
 
 model FinishLevel {
-  id                   String   @id @default(cuid())
-  name                 String
-  slug                 String   @unique
-  description          String?
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  description         String?
   // Prix au m² en FCFA entier.
-  pricePerSquareMeter  Int
-  active               Boolean  @default(true)
-  displayOrder         Int      @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  pricePerSquareMeter Int
+  active              Boolean  @default(true)
+  displayOrder        Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   simulations Simulation[]
 
@@ -191,16 +195,16 @@ model Simulation {
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   // Référentiels + instantanés figés au moment du calcul.
-  projectTypeId             String?
-  projectType               ProjectType? @relation(fields: [projectTypeId], references: [id], onDelete: SetNull)
-  projectTypeNameSnapshot   String
+  projectTypeId              String?
+  projectType                ProjectType? @relation(fields: [projectTypeId], references: [id], onDelete: SetNull)
+  projectTypeNameSnapshot    String
   projectCoefficientSnapshot Int
 
   surface Int
 
-  cityZoneId             String?
-  cityZone               CityZone? @relation(fields: [cityZoneId], references: [id], onDelete: SetNull)
-  cityNameSnapshot       String
+  cityZoneId              String?
+  cityZone                CityZone? @relation(fields: [cityZoneId], references: [id], onDelete: SetNull)
+  cityNameSnapshot        String
   cityCoefficientSnapshot Int
 
   finishLevelId               String?
@@ -247,11 +251,11 @@ model Order {
   amount   Int
   currency String      @default("XOF")
 
-  customerComment  String?
-  desiredStartDate DateTime?
-  internalNotes    String?
+  customerComment   String?
+  desiredStartDate  DateTime?
+  internalNotes     String?
   /// Clés contrôlées des services demandés (catalogue src/lib/content/services.ts).
-  requestedServices String[] @default([])
+  requestedServices String[]  @default([])
 
   paidAt      DateTime?
   dueAt       DateTime?
@@ -323,16 +327,16 @@ model Payment {
 
 /// Journal des notifications fournisseur — garantit l'idempotence des webhooks.
 model PaymentEvent {
-  id         String  @id @default(cuid())
-  paymentId  String?
-  payment    Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  provider   String
-  eventId    String
-  eventType  String
-  payload    Json
-  signatureValid Boolean @default(false)
-  processedAt DateTime?
-  createdAt  DateTime @default(now())
+  id             String    @id @default(cuid())
+  paymentId      String?
+  payment        Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  provider       String
+  eventId        String
+  eventType      String
+  payload        Json
+  signatureValid Boolean   @default(false)
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
 
   @@unique([provider, eventId])
   @@index([paymentId])
@@ -360,16 +364,16 @@ model Report {
   fileName        String?
   fileSize        Int?
   fileChecksum    String?
-  secureTokenHash String?  @unique
+  secureTokenHash String?   @unique
   tokenExpiresAt  DateTime?
 
-  preparedById String?
-  preparedBy   AdminUser? @relation("ReportPreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
-  validatedBy  String?
-  validatedAt  DateTime?
-  sentAt       DateTime?
-  downloadedAt DateTime?
-  downloadCount Int      @default(0)
+  preparedById  String?
+  preparedBy    AdminUser? @relation("ReportPreparedBy", fields: [preparedById], references: [id], onDelete: SetNull)
+  validatedBy   String?
+  validatedAt   DateTime?
+  sentAt        DateTime?
+  downloadedAt  DateTime?
+  downloadCount Int        @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -385,13 +389,13 @@ model ReportItem {
   reportId String
   report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-  category    String
-  label       String
-  amount      Int
+  category     String
+  label        String
+  amount       Int
   // Pourcentage x100 (12,5 % -> 1250).
-  percentage  Int?
-  description String?
-  displayOrder Int   @default(0)
+  percentage   Int?
+  description  String?
+  displayOrder Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -445,7 +449,7 @@ model AppSetting {
 // ---------------------------------------------------------------------------
 
 model AuditLog {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   adminUserId String?
   adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
@@ -461,4 +465,525 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ===========================================================================
+// KËR CARE — maintenance, dépannage et carnet numérique du logement
+// ===========================================================================
+// Montants en francs CFA entiers. Toutes les tables sont préfixées `care_`.
+
+enum AccountRole {
+  CLIENT
+  PROVIDER
+}
+
+enum PropertyType {
+  VILLA
+  MAISON
+  APPARTEMENT
+  IMMEUBLE
+  AUTRE
+}
+
+enum MaintenanceStatus {
+  TODO
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum RequestKind {
+  PLANNED
+  QUICK_REPAIR
+  EMERGENCY
+}
+
+enum RequestStatus {
+  SUBMITTED
+  SEARCHING
+  ASSIGNED
+  ACCEPTED
+  QUOTE_SENT
+  QUOTE_REFUSED
+  QUOTE_ACCEPTED
+  SCHEDULED
+  EN_ROUTE
+  ARRIVED
+  IN_PROGRESS
+  WORK_DONE
+  VALIDATED
+  DISPUTED
+  CLOSED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PENDING
+  ACCEPTED
+  REFUSED
+  WITHDRAWN
+}
+
+enum QuoteStatus {
+  SENT
+  ACCEPTED
+  REFUSED
+  SUPERSEDED
+}
+
+enum AppointmentType {
+  DIAGNOSTIC
+  INTERVENTION
+}
+
+enum AppointmentStatus {
+  PROPOSED
+  CONFIRMED
+  CANCELLED
+  DONE
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REFUSED
+  SUSPENDED
+}
+
+enum ClientDecision {
+  PENDING
+  CONFIRMED
+  CONTESTED
+}
+
+enum ActorType {
+  CLIENT
+  PROVIDER
+  ADMIN
+  SYSTEM
+}
+
+enum AttachmentKind {
+  PHOTO
+  PHOTO_BEFORE
+  PHOTO_AFTER
+  PLAN
+  INVOICE
+  WARRANTY
+  OTHER
+}
+
+/// Compte public Kër+ (client ou prestataire). Les administrateurs restent
+/// dans `admin_users`.
+model Account {
+  id           String      @id @default(cuid())
+  role         AccountRole @default(CLIENT)
+  name         String
+  email        String      @unique
+  phone        String
+  passwordHash String
+  active       Boolean     @default(true)
+  lastLoginAt  DateTime?
+  consentAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  providerProfile ProviderProfile?
+  properties      Property[]
+  requests        ServiceRequest[]
+  reviews         Review[]
+  attachments     Attachment[]
+  statusEvents    RequestStatusEvent[]
+
+  @@index([role, active])
+  @@map("care_accounts")
+}
+
+model ProviderProfile {
+  id                 String             @id @default(cuid())
+  accountId          String             @unique
+  account            Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  businessName       String?
+  bio                String?
+  /// Slugs des catégories de service couvertes.
+  specialties        String[]           @default([])
+  /// Communes desservies.
+  zones              String[]           @default([])
+  workingHours       String?
+  indicativeRates    String?
+  verificationStatus VerificationStatus @default(PENDING)
+  /// Notes de vérification — internes, jamais exposées au public.
+  verificationNotes  String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  assignments  Assignment[]
+  quotes       Quote[]
+  appointments Appointment[]
+  reports      InterventionReport[]
+
+  @@index([verificationStatus])
+  @@map("care_provider_profiles")
+}
+
+model Property {
+  id                   String       @id @default(cuid())
+  ownerId              String
+  owner                Account      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  name                 String
+  type                 PropertyType @default(MAISON)
+  commune              String
+  quartier             String?
+  landmark             String?
+  address              String?
+  surface              Int?
+  levels               Int?
+  bedrooms             Int?
+  bathrooms            Int?
+  yearBuilt            Int?
+  /// Référence d'une commande Kerplus (rapport de construction) rattachée.
+  linkedOrderReference String?
+  archivedAt           DateTime?
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  equipments  Equipment[]
+  tasks       MaintenanceTask[]
+  requests    ServiceRequest[]
+  attachments Attachment[]
+
+  @@index([ownerId, archivedAt])
+  @@map("care_properties")
+}
+
+/// Catégorie de service (plomberie, électricité, climatisation…).
+model CareCategory {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  description         String?
+  /// Prestations courantes de la catégorie.
+  services            String[] @default([])
+  /// Communes couvertes (vide = toutes).
+  zones               String[] @default([])
+  /// Prix indicatif « à partir de », jamais définitif.
+  indicativePriceFrom Int?
+  active              Boolean  @default(true)
+  displayOrder        Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  equipmentTypes EquipmentType[]
+  requests       ServiceRequest[]
+
+  @@index([active, displayOrder])
+  @@map("care_categories")
+}
+
+/// Type d'équipement et règle d'entretien indicative associée.
+model EquipmentType {
+  id                     String        @id @default(cuid())
+  slug                   String        @unique
+  name                   String
+  categoryId             String?
+  category               CareCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  /// Fréquence d'entretien indicative en mois (null = pas de rappel).
+  defaultFrequencyMonths Int?
+  recommendation         String?
+  active                 Boolean       @default(true)
+  displayOrder           Int           @default(0)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  equipments Equipment[]
+
+  @@map("care_equipment_types")
+}
+
+model Equipment {
+  id              String         @id @default(cuid())
+  propertyId      String
+  property        Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  typeId          String?
+  type            EquipmentType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  name            String
+  location        String?
+  quantity        Int            @default(1)
+  brand           String?
+  model           String?
+  installedAt     DateTime?
+  warrantyUntil   DateTime?
+  lastServiceAt   DateTime?
+  /// Fréquence propre à l'équipement (prioritaire sur celle du type).
+  frequencyMonths Int?
+  notes           String?
+  archivedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tasks       MaintenanceTask[]
+  requests    ServiceRequest[]
+  attachments Attachment[]
+
+  @@index([propertyId, archivedAt])
+  @@map("care_equipments")
+}
+
+model MaintenanceTask {
+  id              String            @id @default(cuid())
+  propertyId      String
+  property        Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  equipmentId     String?
+  equipment       Equipment?        @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  title           String
+  frequencyMonths Int?
+  dueAt           DateTime
+  status          MaintenanceStatus @default(TODO)
+  recommendation  String?
+  completedAt     DateTime?
+  requestId       String?
+  request         ServiceRequest?   @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([propertyId, status, dueAt])
+  @@index([status, dueAt])
+  @@map("care_maintenance_tasks")
+}
+
+model ServiceRequest {
+  id              String        @id @default(cuid())
+  reference       String        @unique
+  /// Clé d'idempotence générée par le formulaire : bloque les doublons.
+  idempotencyKey  String        @unique
+  propertyId      String
+  property        Property      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  requesterId     String
+  requester       Account       @relation(fields: [requesterId], references: [id], onDelete: Restrict)
+  categoryId      String
+  category        CareCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  equipmentId     String?
+  equipment       Equipment?    @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  description     String
+  kind            RequestKind   @default(QUICK_REPAIR)
+  status          RequestStatus @default(SUBMITTED)
+  preferredDate   DateTime?
+  preferredSlot   String?
+  firstResponseAt DateTime?
+  validatedAt     DateTime?
+  closedAt        DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  assignments  Assignment[]
+  quotes       Quote[]
+  appointments Appointment[]
+  reports      InterventionReport[]
+  events       RequestStatusEvent[]
+  review       Review?
+  attachments  Attachment[]
+  tasks        MaintenanceTask[]
+
+  @@index([requesterId, createdAt])
+  @@index([status, createdAt])
+  @@index([propertyId])
+  @@map("care_service_requests")
+}
+
+model Assignment {
+  id           String           @id @default(cuid())
+  requestId    String
+  request      ServiceRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  providerId   String
+  provider     ProviderProfile  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  status       AssignmentStatus @default(PENDING)
+  assignedById String?
+  assignedBy   AdminUser?       @relation(fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedAt   DateTime         @default(now())
+  respondedAt  DateTime?
+  reason       String?
+
+  @@index([providerId, status])
+  @@index([requestId, status])
+  @@map("care_assignments")
+}
+
+model Quote {
+  id             String          @id @default(cuid())
+  reference      String          @unique
+  requestId      String
+  request        ServiceRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  providerId     String
+  provider       ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  version        Int
+  status         QuoteStatus     @default(SENT)
+  travelFee      Int             @default(0)
+  diagnosticFee  Int             @default(0)
+  laborAmount    Int             @default(0)
+  partsAmount    Int             @default(0)
+  otherFees      Int             @default(0)
+  discountAmount Int             @default(0)
+  taxAmount      Int             @default(0)
+  totalAmount    Int
+  currency       String          @default("XOF")
+  validUntil     DateTime
+  conditions     String?
+  exclusions     String?
+  note           String?
+  acceptedAt     DateTime?
+  refusedAt      DateTime?
+  refusalReason  String?
+  createdAt      DateTime        @default(now())
+
+  lines QuoteLine[]
+
+  @@unique([requestId, version])
+  @@index([status])
+  @@map("care_quotes")
+}
+
+model QuoteLine {
+  id        String @id @default(cuid())
+  quoteId   String
+  quote     Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  label     String
+  quantity  Int
+  unitPrice Int
+  total     Int
+  position  Int    @default(0)
+
+  @@map("care_quote_lines")
+}
+
+model Appointment {
+  id           String            @id @default(cuid())
+  requestId    String
+  request      ServiceRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  providerId   String
+  provider     ProviderProfile   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  type         AppointmentType   @default(INTERVENTION)
+  startsAt     DateTime
+  endsAt       DateTime
+  /// Frais de diagnostic / déplacement annoncés avant réservation.
+  fee          Int               @default(0)
+  status       AppointmentStatus @default(PROPOSED)
+  note         String?
+  cancelReason String?
+  confirmedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([providerId, startsAt])
+  @@index([requestId])
+  @@map("care_appointments")
+}
+
+/// Rapport de fin d'intervention. Une nouvelle révision est créée si
+/// l'intervention est reprise après contestation : rien n'est écrasé.
+model InterventionReport {
+  id                String          @id @default(cuid())
+  revision          Int             @default(1)
+  requestId         String
+  request           ServiceRequest  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  providerId        String
+  provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  diagnostic        String
+  workDone          String
+  partsUsed         String?
+  recommendations   String?
+  durationMinutes   Int?
+  approvedCost      Int?
+  nextMaintenanceAt DateTime?
+  clientDecision    ClientDecision  @default(PENDING)
+  clientComment     String?
+  decidedAt         DateTime?
+  submittedAt       DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  attachments Attachment[]
+
+  @@unique([requestId, revision])
+  @@map("care_intervention_reports")
+}
+
+model RequestStatusEvent {
+  id             String         @id @default(cuid())
+  requestId      String
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromStatus     RequestStatus?
+  toStatus       RequestStatus
+  actorType      ActorType
+  actorAccountId String?
+  actorAccount   Account?       @relation(fields: [actorAccountId], references: [id], onDelete: SetNull)
+  actorAdminId   String?
+  actorAdmin     AdminUser?     @relation(fields: [actorAdminId], references: [id], onDelete: SetNull)
+  reason         String?
+  createdAt      DateTime       @default(now())
+
+  @@index([requestId, createdAt])
+  @@map("care_status_events")
+}
+
+model Review {
+  id          String         @id @default(cuid())
+  requestId   String         @unique
+  request     ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      Account        @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  rating      Int
+  quality     Int?
+  punctuality Int?
+  price       Int?
+  behaviour   Int?
+  comment     String?
+  createdAt   DateTime       @default(now())
+
+  @@map("care_reviews")
+}
+
+/// Fichier privé (photo, plan, facture, garantie). Stocké hors de `public/`,
+/// servi uniquement par /ker-care/fichiers/[id] après contrôle d'accès.
+model Attachment {
+  id           String              @id @default(cuid())
+  kind         AttachmentKind      @default(PHOTO)
+  propertyId   String?
+  property     Property?           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  equipmentId  String?
+  equipment    Equipment?          @relation(fields: [equipmentId], references: [id], onDelete: SetNull)
+  requestId    String?
+  request      ServiceRequest?     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  reportId     String?
+  report       InterventionReport? @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  uploadedById String?
+  uploadedBy   Account?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  title        String?
+  fileKey      String              @unique
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  archivedAt   DateTime?
+  createdAt    DateTime            @default(now())
+
+  @@index([propertyId])
+  @@index([requestId])
+  @@map("care_attachments")
+}
+
+/// Offre d'abonnement — hypothèse commerciale, non souscriptible tant que
+/// `subscribable` vaut false (paiement et conditions non prêts).
+model CarePlan {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  monthlyPrice Int
+  benefits     String[] @default([])
+  subscribable Boolean  @default(false)
+  active       Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("care_plans")
 }

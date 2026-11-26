@@ -5,6 +5,8 @@ import { TIMEZONE } from './format';
  * Génération des références métier :
  *   KP-EST-AAAAMMJJ-XXXX pour les simulations
  *   KP-CMD-AAAAMMJJ-XXXX pour les commandes
+ *   KP-DEP-AAAAMMJJ-XXXX pour les demandes d'intervention Kër Care
+ *   KP-DEV-AAAAMMJJ-XXXX pour les devis Kër Care
  *
  * Le suffixe est tiré aléatoirement dans un alphabet sans caractères ambigus
  * (ni 0/O ni 1/I). L'unicité est garantie en base par une contrainte `unique` ;
@@ -14,7 +16,7 @@ import { TIMEZONE } from './format';
 const ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const SUFFIX_LENGTH = 4;
 
-export type ReferenceKind = 'EST' | 'CMD';
+export type ReferenceKind = 'EST' | 'CMD' | 'DEP' | 'DEV';
 
 export function formatDatePart(date: Date = new Date()): string {
   // en-CA produit AAAA-MM-JJ ; on retire les tirets.
@@ -33,7 +35,7 @@ export function buildReference(kind: ReferenceKind, date: Date = new Date()): st
   return `KP-${kind}-${formatDatePart(date)}-${randomSuffix()}`;
 }
 
-export const REFERENCE_PATTERN = /^KP-(EST|CMD)-\d{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4,8}$/;
+export const REFERENCE_PATTERN = /^KP-(EST|CMD|DEP|DEV)-\d{8}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4,8}$/;
 
 export function isValidReference(reference: string): boolean {
   return REFERENCE_PATTERN.test(reference);

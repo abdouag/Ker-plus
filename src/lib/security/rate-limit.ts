@@ -38,6 +38,10 @@ export const RATE_LIMITS = {
   login: { limit: 8, windowSeconds: 900 },
   download: { limit: 30, windowSeconds: 300 },
   webhook: { limit: 240, windowSeconds: 60 },
+  signup: { limit: 5, windowSeconds: 900 },
+  careRequest: { limit: 10, windowSeconds: 600 },
+  careWrite: { limit: 60, windowSeconds: 60 },
+  careFile: { limit: 120, windowSeconds: 300 },
 } as const satisfies Record<string, RateLimitOptions>;
 
 function purge(now: number): void {

@@ -5,6 +5,9 @@ import { CsrfError } from '@/lib/security/csrf';
 import { OrderError } from '@/lib/services/orders';
 import { PaymentError } from '@/lib/services/payments';
 import { ReportError } from '@/lib/services/reports';
+import { CareError } from '@/lib/care/errors';
+import { TransitionError } from '@/lib/care/workflow';
+import { QuoteValidationError } from '@/lib/care/quote';
 
 /** État renvoyé par toutes les actions d'administration. */
 export interface ActionState {
@@ -23,7 +26,10 @@ export function toActionState(error: unknown, context: string): ActionState {
     error instanceof AuthorizationError ||
     error instanceof OrderError ||
     error instanceof PaymentError ||
-    error instanceof ReportError
+    error instanceof ReportError ||
+    error instanceof CareError ||
+    error instanceof TransitionError ||
+    error instanceof QuoteValidationError
   ) {
     return { ok: false, error: error.message };
   }

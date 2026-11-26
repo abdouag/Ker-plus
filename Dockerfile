@@ -69,7 +69,7 @@ COPY --from=builder --chown=kerplus:nodejs /app/scripts/docker-entrypoint.sh ./d
 RUN chmod +x ./docker-entrypoint.sh
 
 # Stockage des rapports PDF (à monter sur un volume persistant).
-RUN mkdir -p /app/storage/reports /app/storage/emails \
+RUN mkdir -p /app/storage/reports /app/storage/emails /app/storage/care \
   && chown -R kerplus:nodejs /app/storage
 
 USER kerplus

@@ -9,6 +9,11 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { config as loadEnv } from 'dotenv';
 import { SETTING_DEFINITIONS } from '../src/lib/settings/definitions';
+import {
+  DEFAULT_CARE_CATEGORIES,
+  DEFAULT_CARE_PLANS,
+  DEFAULT_EQUIPMENT_TYPES,
+} from '../src/lib/care/catalog';
 
 loadEnv();
 
@@ -185,10 +190,64 @@ async function seedAdmin(): Promise<void> {
   console.info(`Compte administrateur créé : ${email}`);
 }
 
+/**
+ * Référentiels Kër Care : catégories, types d'équipements (règles d'entretien
+ * indicatives) et offres indicatives. Comme pour l'estimateur, les valeurs
+ * modifiées depuis l'administration ne sont jamais écrasées.
+ */
+async function seedCare(): Promise<void> {
+  const categoryIds = new Map<string, string>();
+  for (const [index, category] of DEFAULT_CARE_CATEGORIES.entries()) {
+    const row = await prisma.careCategory.upsert({
+      where: { slug: category.slug },
+      update: {},
+      create: {
+        slug: category.slug,
+        name: category.name,
+        description: category.description,
+        services: [...category.services],
+        displayOrder: index + 1,
+      },
+    });
+    categoryIds.set(category.slug, row.id);
+  }
+  for (const [index, type] of DEFAULT_EQUIPMENT_TYPES.entries()) {
+    await prisma.equipmentType.upsert({
+      where: { slug: type.slug },
+      update: {},
+      create: {
+        slug: type.slug,
+        name: type.name,
+        categoryId: categoryIds.get(type.category) ?? null,
+        defaultFrequencyMonths: type.months,
+        recommendation: type.recommendation,
+        displayOrder: index + 1,
+      },
+    });
+  }
+  for (const [index, plan] of DEFAULT_CARE_PLANS.entries()) {
+    await prisma.carePlan.upsert({
+      where: { slug: plan.slug },
+      update: {},
+      create: {
+        slug: plan.slug,
+        name: plan.name,
+        monthlyPrice: plan.monthlyPrice,
+        benefits: [...plan.benefits],
+        displayOrder: index + 1,
+      },
+    });
+  }
+  console.info(
+    `Kër Care : ${DEFAULT_CARE_CATEGORIES.length} catégories, ${DEFAULT_EQUIPMENT_TYPES.length} types d’équipements, ${DEFAULT_CARE_PLANS.length} offres vérifiés.`,
+  );
+}
+
 async function main(): Promise<void> {
   console.info('Seed Estimateur Kerplus…');
   await seedReferentials();
   await seedSettings();
+  await seedCare();
   await seedAdmin();
   console.info('Seed terminé.');
 }

@@ -20,7 +20,13 @@ export interface SettingDefinition {
   max?: number;
 }
 
-export type SettingGroup = 'estimation' | 'commercial' | 'contact' | 'textes' | 'paiement';
+export type SettingGroup =
+  | 'estimation'
+  | 'commercial'
+  | 'contact'
+  | 'textes'
+  | 'paiement'
+  | 'kercare';
 
 export const SETTING_GROUP_LABELS: Record<SettingGroup, string> = {
   estimation: 'Paramètres de calcul',
@@ -28,6 +34,7 @@ export const SETTING_GROUP_LABELS: Record<SettingGroup, string> = {
   contact: 'Coordonnées Kerplus',
   textes: 'Textes affichés',
   paiement: 'Paiement',
+  kercare: 'Kër Care',
 };
 
 export const DEFAULT_EXCLUSIONS = [
@@ -74,7 +81,21 @@ export const SETTING_KEYS = {
   VARIATION_FACTORS: 'variation_factors',
   ESTIMATOR_ENABLED: 'estimator_enabled',
   ORDER_ENABLED: 'order_enabled',
+  CARE_ENABLED: 'care_enabled',
+  CARE_SIGNUP_ENABLED: 'care_signup_enabled',
+  CARE_COMMISSION_RATE: 'care_commission_rate',
+  CARE_QUOTE_VALIDITY_DAYS: 'care_quote_validity_days',
+  CARE_EMERGENCY_TEXT: 'care_emergency_text',
+  CARE_CANCELLATION_TERMS: 'care_cancellation_terms',
+  CARE_ZONE_TEXT: 'care_zone_text',
 } as const;
+
+export const DEFAULT_CARE_EMERGENCY_TEXT = [
+  'Kër Care n’est pas un service de secours.',
+  'En cas d’odeur de gaz, de fumée, d’incendie, de risque d’électrocution ou d’effondrement : éloignez-vous de la zone, coupez si possible le gaz et le disjoncteur général sans prendre de risque, et appelez immédiatement les secours.',
+  'Sapeurs-pompiers : 18 · SAMU : 1515 · Police : 17.',
+  'Vérifiez ces numéros auprès des autorités locales.',
+].join('\n');
 
 export const SETTING_DEFINITIONS: SettingDefinition[] = [
   {
@@ -221,6 +242,63 @@ export const SETTING_DEFINITIONS: SettingDefinition[] = [
     label: 'Commande du rapport active',
     group: 'commercial',
     defaultValue: 'true',
+  },
+  {
+    key: SETTING_KEYS.CARE_ENABLED,
+    type: 'BOOLEAN',
+    label: 'Demandes d’intervention Kër Care ouvertes',
+    group: 'kercare',
+    defaultValue: 'true',
+    help: 'Désactivé : la page Kër Care reste visible mais aucune nouvelle demande n’est acceptée.',
+  },
+  {
+    key: SETTING_KEYS.CARE_SIGNUP_ENABLED,
+    type: 'BOOLEAN',
+    label: 'Création de compte client ouverte',
+    group: 'kercare',
+    defaultValue: 'true',
+  },
+  {
+    key: SETTING_KEYS.CARE_COMMISSION_RATE,
+    type: 'INTEGER',
+    label: 'Commission Kerplus sur les interventions (×100, 1000 = 10 %)',
+    group: 'kercare',
+    defaultValue: '1000',
+    min: 0,
+    max: 5000,
+    help: 'Hypothèse initiale à valider. Utilisée pour la répartition indicative affichée en administration.',
+  },
+  {
+    key: SETTING_KEYS.CARE_QUOTE_VALIDITY_DAYS,
+    type: 'INTEGER',
+    label: 'Durée de validité par défaut des devis (jours)',
+    group: 'kercare',
+    defaultValue: '15',
+    min: 1,
+    max: 90,
+  },
+  {
+    key: SETTING_KEYS.CARE_ZONE_TEXT,
+    type: 'STRING',
+    label: 'Zone desservie (texte affiché)',
+    group: 'kercare',
+    defaultValue: 'Dakar et sa banlieue',
+  },
+  {
+    key: SETTING_KEYS.CARE_EMERGENCY_TEXT,
+    type: 'TEXT',
+    label: 'Consignes en cas de danger immédiat',
+    group: 'kercare',
+    defaultValue: DEFAULT_CARE_EMERGENCY_TEXT,
+    help: 'Affiché lorsque le client signale un danger. Vérifier les numéros d’urgence avant lancement.',
+  },
+  {
+    key: SETTING_KEYS.CARE_CANCELLATION_TERMS,
+    type: 'TEXT',
+    label: 'Conditions d’annulation et de report',
+    group: 'kercare',
+    defaultValue:
+      'Vous pouvez annuler gratuitement votre demande tant qu’aucun rendez-vous n’est confirmé. Un rendez-vous confirmé peut être reporté depuis votre espace ; les frais de déplacement ou de diagnostic annoncés restent dus si le prestataire s’est déjà déplacé. Conditions indicatives, à valider avant lancement commercial.',
   },
 ];
 

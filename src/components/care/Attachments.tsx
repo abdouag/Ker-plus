@@ -22,7 +22,12 @@ export function AttachmentGrid({
         const isImage = file.mimeType.startsWith('image/');
         return (
           <li key={file.id} className="overflow-hidden rounded-xl border border-sand-200 bg-white">
-            <a href={href} target="_blank" rel="noopener" className="block focus-visible:outline-offset-2">
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener"
+              className="block focus-visible:outline-offset-2"
+            >
               {isImage ? (
                 // Fichier privé servi après contrôle d'accès : pas d'optimisation next/image.
                 // eslint-disable-next-line @next/next/no-img-element

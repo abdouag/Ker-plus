@@ -22,6 +22,10 @@ export default async function globalSetup(): Promise<void> {
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      care_reviews, care_status_events, care_attachments, care_intervention_reports,
+      care_appointments, care_quote_lines, care_quotes, care_assignments,
+      care_maintenance_tasks, care_service_requests, care_equipments, care_properties,
+      care_equipment_types, care_categories, care_provider_profiles, care_accounts, care_plans,
       audit_logs, payment_events, payments, report_items, reports,
       consultation_calls, orders, simulations, customers,
       project_types, city_zones, finish_levels, app_settings, admin_users

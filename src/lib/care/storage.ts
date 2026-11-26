@@ -81,7 +81,9 @@ export async function validateUpload(
   const buffer = Buffer.from(await file.arrayBuffer());
   const mimeType = sniffMimeType(buffer);
   if (!mimeType || !allowed.includes(mimeType)) {
-    const formats = allowed.includes('application/pdf') ? 'JPEG, PNG, WebP ou PDF' : 'JPEG, PNG ou WebP';
+    const formats = allowed.includes('application/pdf')
+      ? 'JPEG, PNG, WebP ou PDF'
+      : 'JPEG, PNG ou WebP';
     throw new CareError(`« ${file.name} » : format non accepté (${formats}).`, 415);
   }
   const fileName = (file.name || 'fichier').replace(/[^\p{L}\p{N}._ -]/gu, '_').slice(0, 120);
@@ -92,7 +94,9 @@ export async function validateUpload(
 export function readFiles(formData: FormData, name: string): File[] {
   const files = formData
     .getAll(name)
-    .filter((value): value is File => typeof value === 'object' && value !== null && 'size' in value)
+    .filter(
+      (value): value is File => typeof value === 'object' && value !== null && 'size' in value,
+    )
     .filter((file) => file.size > 0);
   if (files.length > CARE_UPLOAD.maxFilesPerSubmit) {
     throw new CareError(

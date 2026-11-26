@@ -45,7 +45,9 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
               <p className="text-sm text-ink-soft">{event.reason}</p>
             ) : null}
             <p className="text-xs text-ink-muted">
-              <time dateTime={event.createdAt.toISOString()}>{formatDateTime(event.createdAt)}</time>
+              <time dateTime={event.createdAt.toISOString()}>
+                {formatDateTime(event.createdAt)}
+              </time>
               {' · '}
               {ACTOR_LABELS[event.actorType]}
               {event.actorName ? ` (${event.actorName})` : ''}

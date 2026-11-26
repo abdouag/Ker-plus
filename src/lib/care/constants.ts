@@ -81,8 +81,7 @@ export const REQUEST_NEXT_STEP_CLIENT: Record<RequestStatus, string> = {
   SUBMITTED: 'Kerplus étudie votre demande et recherche un prestataire vérifié.',
   SEARCHING: 'Kerplus recherche un prestataire vérifié disponible.',
   ASSIGNED: 'Un prestataire a été sollicité ; il doit confirmer sa prise en charge.',
-  ACCEPTED:
-    'Le prestataire va vous proposer un devis ou, si nécessaire, une visite de diagnostic.',
+  ACCEPTED: 'Le prestataire va vous proposer un devis ou, si nécessaire, une visite de diagnostic.',
   QUOTE_SENT: 'Consultez le devis puis acceptez-le ou refusez-le.',
   QUOTE_REFUSED: 'Le prestataire peut proposer un devis révisé. Vous pouvez aussi annuler.',
   QUOTE_ACCEPTED: 'Le prestataire va proposer un créneau d’intervention à confirmer.',

@@ -30,10 +30,18 @@ export function QuoteDetails({ quote }: { quote: Quote & { lines: QuoteLine[] } 
             <caption className="sr-only">Détail des pièces et fournitures</caption>
             <thead>
               <tr className="border-b border-sand-200 text-left text-xs uppercase text-ink-muted">
-                <th scope="col" className="py-2 pr-2 font-semibold">Désignation</th>
-                <th scope="col" className="py-2 pr-2 text-right font-semibold">Qté</th>
-                <th scope="col" className="py-2 pr-2 text-right font-semibold">Prix unitaire</th>
-                <th scope="col" className="py-2 text-right font-semibold">Total</th>
+                <th scope="col" className="py-2 pr-2 font-semibold">
+                  Désignation
+                </th>
+                <th scope="col" className="py-2 pr-2 text-right font-semibold">
+                  Qté
+                </th>
+                <th scope="col" className="py-2 pr-2 text-right font-semibold">
+                  Prix unitaire
+                </th>
+                <th scope="col" className="py-2 text-right font-semibold">
+                  Total
+                </th>
               </tr>
             </thead>
             <tbody>

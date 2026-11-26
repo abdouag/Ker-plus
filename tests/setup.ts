@@ -16,3 +16,4 @@ process.env.AUTH_SECRET =
 process.env.EMAIL_PROVIDER = 'preview';
 process.env.RATE_LIMIT_ENABLED = 'false';
 process.env.REPORT_STORAGE_DIR = './storage/test-reports';
+process.env.CARE_STORAGE_DIR = './storage/test-care';

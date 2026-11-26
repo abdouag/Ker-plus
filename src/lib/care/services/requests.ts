@@ -206,7 +206,10 @@ export async function getClientRequest(requesterId: string, reference: string) {
         orderBy: { assignedAt: 'desc' },
         include: { provider: { select: providerPublicSelect } },
       },
-      quotes: { orderBy: { version: 'desc' }, include: { lines: { orderBy: { position: 'asc' } } } },
+      quotes: {
+        orderBy: { version: 'desc' },
+        include: { lines: { orderBy: { position: 'asc' } } },
+      },
       appointments: { orderBy: { startsAt: 'asc' } },
       reports: {
         orderBy: { revision: 'desc' },
@@ -217,7 +220,9 @@ export async function getClientRequest(requesterId: string, reference: string) {
   });
   if (!request) throw new CareError('Demande introuvable.', 404);
 
-  const current = request.assignments.find((a) => a.status === 'ACCEPTED' || a.status === 'PENDING');
+  const current = request.assignments.find(
+    (a) => a.status === 'ACCEPTED' || a.status === 'PENDING',
+  );
   return {
     ...request,
     currentProvider: current
@@ -280,7 +285,9 @@ export async function getProviderMission(providerId: string, reference: string) 
     where: { reference },
     include: {
       category: true,
-      equipment: { select: { name: true, brand: true, model: true, installedAt: true, lastServiceAt: true } },
+      equipment: {
+        select: { name: true, brand: true, model: true, installedAt: true, lastServiceAt: true },
+      },
       property: true,
       requester: { select: { name: true, phone: true } },
       attachments: { where: { reportId: null }, orderBy: { createdAt: 'asc' } },
@@ -330,7 +337,10 @@ export async function getProviderMission(providerId: string, reference: string) 
 // ===========================================================================
 
 async function releaseOpenItems(tx: Tx, requestId: string, reason: string) {
-  await tx.quote.updateMany({ where: { requestId, status: 'SENT' }, data: { status: 'SUPERSEDED' } });
+  await tx.quote.updateMany({
+    where: { requestId, status: 'SENT' },
+    data: { status: 'SUPERSEDED' },
+  });
   await tx.appointment.updateMany({
     where: { requestId, status: { in: ['PROPOSED', 'CONFIRMED'] } },
     data: { status: 'CANCELLED', cancelReason: reason },
@@ -472,7 +482,9 @@ export async function createQuote(
       orderBy: { version: 'desc' },
     });
     const version = (last?.version ?? 0) + 1;
-    const hasAccepted = await tx.quote.count({ where: { requestId: request.id, status: 'ACCEPTED' } });
+    const hasAccepted = await tx.quote.count({
+      where: { requestId: request.id, status: 'ACCEPTED' },
+    });
     await tx.quote.updateMany({
       where: { requestId: request.id, status: 'SENT' },
       data: { status: 'SUPERSEDED' },
@@ -509,7 +521,9 @@ export async function createQuote(
         tx,
         request,
         actor,
-        hasAccepted > 0 ? `Supplément : devis v${version} à approuver` : `Devis révisé v${version} envoyé`,
+        hasAccepted > 0
+          ? `Supplément : devis v${version} à approuver`
+          : `Devis révisé v${version} envoyé`,
       );
     }
     return quote;
@@ -527,9 +541,13 @@ async function getClientQuote(requesterId: string, quoteId: string) {
 
 export async function acceptQuote(requesterId: string, quoteId: string) {
   const quote = await getClientQuote(requesterId, quoteId);
-  if (quote.status !== 'SENT') throw new CareError('Ce devis n’est plus en attente de décision.', 409);
+  if (quote.status !== 'SENT')
+    throw new CareError('Ce devis n’est plus en attente de décision.', 409);
   if (isQuoteExpired(quote.validUntil)) {
-    throw new CareError('Ce devis a expiré. Demandez une nouvelle proposition au prestataire.', 409);
+    throw new CareError(
+      'Ce devis a expiré. Demandez une nouvelle proposition au prestataire.',
+      409,
+    );
   }
   const actor: CareActor = { type: 'CLIENT', accountId: requesterId };
   await prisma.$transaction(async (tx) => {
@@ -550,7 +568,8 @@ export async function acceptQuote(requesterId: string, quoteId: string) {
 
 export async function refuseQuote(requesterId: string, quoteId: string, reason: string) {
   const quote = await getClientQuote(requesterId, quoteId);
-  if (quote.status !== 'SENT') throw new CareError('Ce devis n’est plus en attente de décision.', 409);
+  if (quote.status !== 'SENT')
+    throw new CareError('Ce devis n’est plus en attente de décision.', 409);
   const actor: CareActor = { type: 'CLIENT', accountId: requesterId };
   await prisma.$transaction(async (tx) => {
     const updated = await tx.quote.updateMany({
@@ -668,7 +687,8 @@ export async function confirmAppointment(requesterId: string, appointmentId: str
     include: { request: true },
   });
   if (!appointment) throw new CareError('Rendez-vous introuvable.', 404);
-  if (appointment.status !== 'PROPOSED') throw new CareError('Ce rendez-vous n’est plus à confirmer.', 409);
+  if (appointment.status !== 'PROPOSED')
+    throw new CareError('Ce rendez-vous n’est plus à confirmer.', 409);
   if (appointment.startsAt.getTime() <= Date.now()) {
     throw new CareError('Ce créneau est passé. Demandez une nouvelle proposition.', 409);
   }
@@ -683,7 +703,13 @@ export async function confirmAppointment(requesterId: string, appointmentId: str
   const actor: CareActor = { type: 'CLIENT', accountId: requesterId };
   await prisma.$transaction(async (tx) => {
     await lockProvider(tx, appointment.providerId);
-    await assertNoConflict(tx, appointment.providerId, appointment.startsAt, appointment.endsAt, appointment.id);
+    await assertNoConflict(
+      tx,
+      appointment.providerId,
+      appointment.startsAt,
+      appointment.endsAt,
+      appointment.id,
+    );
     const updated = await tx.appointment.updateMany({
       where: { id: appointment.id, status: 'PROPOSED' },
       data: { status: 'CONFIRMED', confirmedAt: new Date() },
@@ -728,8 +754,7 @@ export async function cancelAppointment(actor: CareActor, appointmentId: string,
   if (!reason) throw new CareError('Indiquez le motif de l’annulation ou du report.', 400);
 
   const { request } = appointment;
-  const wasScheduled =
-    appointment.status === 'CONFIRMED' && appointment.type === 'INTERVENTION';
+  const wasScheduled = appointment.status === 'CONFIRMED' && appointment.type === 'INTERVENTION';
   if (wasScheduled && request.status !== 'SCHEDULED') {
     throw new CareError('L’intervention a déjà commencé : contactez Kerplus.', 409);
   }
@@ -756,14 +781,24 @@ export async function markDiagnosticDone(
   appointmentId: string,
 ) {
   const appointment = await prisma.appointment.findFirst({
-    where: { id: appointmentId, providerId: provider.providerId, type: 'DIAGNOSTIC', status: 'CONFIRMED' },
+    where: {
+      id: appointmentId,
+      providerId: provider.providerId,
+      type: 'DIAGNOSTIC',
+      status: 'CONFIRMED',
+    },
     include: { request: true },
   });
   if (!appointment) throw new CareError('Rendez-vous introuvable.', 404);
   await requireAssignment(prisma, provider.providerId, appointment.requestId);
   await prisma.$transaction(async (tx) => {
     await tx.appointment.update({ where: { id: appointment.id }, data: { status: 'DONE' } });
-    await logRequestEvent(tx, appointment.request, { type: 'PROVIDER', ...provider }, 'Visite de diagnostic effectuée');
+    await logRequestEvent(
+      tx,
+      appointment.request,
+      { type: 'PROVIDER', ...provider },
+      'Visite de diagnostic effectuée',
+    );
   });
 }
 
@@ -779,7 +814,11 @@ export async function advanceOnSite(
   const request = await prisma.serviceRequest.findUnique({ where: { reference } });
   if (!request) throw new CareError('Mission introuvable.', 404);
   await requireAssignment(prisma, provider.providerId, request.id);
-  const labels = { EN_ROUTE: 'Prestataire en route', ARRIVED: 'Prestataire arrivé sur place', IN_PROGRESS: 'Intervention démarrée' };
+  const labels = {
+    EN_ROUTE: 'Prestataire en route',
+    ARRIVED: 'Prestataire arrivé sur place',
+    IN_PROGRESS: 'Intervention démarrée',
+  };
   await prisma.$transaction((tx) =>
     transitionRequest(tx, request, to, { type: 'PROVIDER', ...provider }, { reason: labels[to] }),
   );
@@ -890,7 +929,11 @@ async function getOwnedRequest(requesterId: string, reference: string) {
  * Validation par le client : le carnet est enrichi (dernier entretien de
  * l'équipement, échéance suivante) et l'avis devient possible.
  */
-export async function validateIntervention(requesterId: string, reference: string, comment?: string) {
+export async function validateIntervention(
+  requesterId: string,
+  reference: string,
+  comment?: string,
+) {
   const request = await getOwnedRequest(requesterId, reference);
   const actor: CareActor = { type: 'CLIENT', accountId: requesterId };
   const now = new Date();
@@ -914,7 +957,10 @@ export async function validateIntervention(requesterId: string, reference: strin
       where: { requestId: request.id, status: { in: ['TODO', 'PLANNED'] } },
     });
     if (request.equipment) {
-      await tx.equipment.update({ where: { id: request.equipment.id }, data: { lastServiceAt: now } });
+      await tx.equipment.update({
+        where: { id: request.equipment.id },
+        data: { lastServiceAt: now },
+      });
     }
     const frequency =
       request.equipment?.frequencyMonths ?? request.equipment?.type?.defaultFrequencyMonths ?? null;
@@ -955,7 +1001,8 @@ export async function validateIntervention(requesterId: string, reference: strin
 }
 
 export async function contestIntervention(requesterId: string, reference: string, reason: string) {
-  if (!reason || reason.length < 5) throw new CareError('Expliquez le motif de la contestation.', 400);
+  if (!reason || reason.length < 5)
+    throw new CareError('Expliquez le motif de la contestation.', 400);
   const request = await getOwnedRequest(requesterId, reference);
   await prisma.$transaction(async (tx) => {
     const report = await tx.interventionReport.findFirst({
@@ -963,9 +1010,15 @@ export async function contestIntervention(requesterId: string, reference: string
       orderBy: { revision: 'desc' },
     });
     if (!report) throw new CareError('Aucun rapport à contester.', 409);
-    await transitionRequest(tx, request, 'DISPUTED', { type: 'CLIENT', accountId: requesterId }, {
-      reason: `Contestation : ${reason}`,
-    });
+    await transitionRequest(
+      tx,
+      request,
+      'DISPUTED',
+      { type: 'CLIENT', accountId: requesterId },
+      {
+        reason: `Contestation : ${reason}`,
+      },
+    );
     await tx.interventionReport.update({
       where: { id: report.id },
       data: { clientDecision: 'CONTESTED', clientComment: reason, decidedAt: new Date() },
@@ -973,9 +1026,17 @@ export async function contestIntervention(requesterId: string, reference: string
   });
 }
 
-export async function cancelRequestByClient(requesterId: string, reference: string, reason: string) {
+export async function cancelRequestByClient(
+  requesterId: string,
+  reference: string,
+  reason: string,
+) {
   const request = await getOwnedRequest(requesterId, reference);
-  await cancelRequest(request, { type: 'CLIENT', accountId: requesterId }, reason || 'Annulée par le client');
+  await cancelRequest(
+    request,
+    { type: 'CLIENT', accountId: requesterId },
+    reason || 'Annulée par le client',
+  );
 }
 
 export async function cancelRequest(
@@ -1006,7 +1067,12 @@ export async function submitReview(requesterId: string, reference: string, input
   }
   try {
     await prisma.review.create({
-      data: { requestId: request.id, authorId: requesterId, ...input, comment: input.comment ?? null },
+      data: {
+        requestId: request.id,
+        authorId: requesterId,
+        ...input,
+        comment: input.comment ?? null,
+      },
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {

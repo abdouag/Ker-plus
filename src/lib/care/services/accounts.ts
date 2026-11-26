@@ -116,7 +116,9 @@ export async function listProviders() {
   return prisma.providerProfile.findMany({
     orderBy: [{ verificationStatus: 'asc' }, { createdAt: 'desc' }],
     include: {
-      account: { select: { id: true, name: true, email: true, phone: true, active: true, lastLoginAt: true } },
+      account: {
+        select: { id: true, name: true, email: true, phone: true, active: true, lastLoginAt: true },
+      },
       _count: { select: { assignments: true } },
     },
   });
@@ -127,7 +129,9 @@ export async function providerRatings(): Promise<Map<string, { average: number; 
   const reviews = await prisma.review.findMany({
     select: {
       rating: true,
-      request: { select: { assignments: { where: { status: 'ACCEPTED' }, select: { providerId: true } } } },
+      request: {
+        select: { assignments: { where: { status: 'ACCEPTED' }, select: { providerId: true } } },
+      },
     },
   });
   const totals = new Map<string, { sum: number; count: number }>();
@@ -140,6 +144,9 @@ export async function providerRatings(): Promise<Map<string, { average: number; 
     }
   }
   return new Map(
-    [...totals].map(([id, { sum, count }]) => [id, { average: Math.round((sum / count) * 10) / 10, count }]),
+    [...totals].map(([id, { sum, count }]) => [
+      id,
+      { average: Math.round((sum / count) * 10) / 10, count },
+    ]),
   );
 }

@@ -129,7 +129,11 @@ export async function linkOrderToProperty(
 type EquipmentInput = z.infer<typeof equipmentSchema>;
 
 async function resolveFrequency(typeId: string | undefined, own: number | undefined) {
-  if (own) return { frequency: own, type: typeId ? await prisma.equipmentType.findUnique({ where: { id: typeId } }) : null };
+  if (own)
+    return {
+      frequency: own,
+      type: typeId ? await prisma.equipmentType.findUnique({ where: { id: typeId } }) : null,
+    };
   if (!typeId) return { frequency: null, type: null };
   const type = await prisma.equipmentType.findUnique({ where: { id: typeId } });
   if (!type || !type.active) throw new CareError('Type d’équipement inconnu.', 400);
@@ -205,7 +209,11 @@ export async function updateEquipment(ownerId: string, equipmentId: string, inpu
   });
 }
 
-export async function setEquipmentArchived(ownerId: string, equipmentId: string, archived: boolean) {
+export async function setEquipmentArchived(
+  ownerId: string,
+  equipmentId: string,
+  archived: boolean,
+) {
   await getOwnedEquipment(ownerId, equipmentId);
   return prisma.equipment.update({
     where: { id: equipmentId },
@@ -229,7 +237,9 @@ export async function addPropertyDocuments(
     const equipment = await getOwnedEquipment(ownerId, meta.equipmentId);
     if (equipment.propertyId !== propertyId) throw new CareError('Équipement introuvable.', 404);
   }
-  const uploads = await Promise.all(files.map((file) => validateUpload(file, CARE_UPLOAD.documentTypes)));
+  const uploads = await Promise.all(
+    files.map((file) => validateUpload(file, CARE_UPLOAD.documentTypes)),
+  );
   for (const upload of uploads) {
     const fileKey = await storeFile(upload);
     await prisma.attachment.create({
@@ -255,7 +265,10 @@ export async function archivePropertyDocument(ownerId: string, attachmentId: str
     where: { id: attachmentId, property: { ownerId }, requestId: null, reportId: null },
   });
   if (!attachment) throw new CareError('Document introuvable.', 404);
-  return prisma.attachment.update({ where: { id: attachmentId }, data: { archivedAt: new Date() } });
+  return prisma.attachment.update({
+    where: { id: attachmentId },
+    data: { archivedAt: new Date() },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -341,7 +354,8 @@ export async function completeTask(
         data: { lastServiceAt: completedAt },
       });
     }
-    const next = nextDueAt ?? (task.frequencyMonths ? addMonths(completedAt, task.frequencyMonths) : null);
+    const next =
+      nextDueAt ?? (task.frequencyMonths ? addMonths(completedAt, task.frequencyMonths) : null);
     if (next) {
       await tx.maintenanceTask.create({
         data: {

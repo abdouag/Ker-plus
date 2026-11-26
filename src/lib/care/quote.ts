@@ -56,7 +56,12 @@ export function computeQuote(input: QuoteInput): ComputedQuote {
       throw new QuoteValidationError(`Ligne ${index + 1} : quantité invalide.`);
     }
     assertAmount(line.unitPrice, `Ligne ${index + 1}`);
-    return { label, quantity: line.quantity, unitPrice: line.unitPrice, total: line.quantity * line.unitPrice };
+    return {
+      label,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      total: line.quantity * line.unitPrice,
+    };
   });
 
   assertAmount(input.travelFee, 'Déplacement');

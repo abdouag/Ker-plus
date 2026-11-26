@@ -75,7 +75,8 @@ export async function GET(
   const content = await readStoredFile(attachment.fileKey);
   if (!content) return notFound;
 
-  const inline = attachment.mimeType.startsWith('image/') || attachment.mimeType === 'application/pdf';
+  const inline =
+    attachment.mimeType.startsWith('image/') || attachment.mimeType === 'application/pdf';
   const safeName = attachment.fileName.replace(/[^\p{L}\p{N}._ -]/gu, '_');
   return new NextResponse(new Uint8Array(content), {
     status: 200,
@@ -85,7 +86,8 @@ export async function GET(
       'content-disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(safeName)}`,
       'cache-control': 'private, no-store, max-age=0',
       'x-robots-tag': 'noindex, nofollow',
-      'content-security-policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+      'content-security-policy':
+        "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
     },
   });
 }

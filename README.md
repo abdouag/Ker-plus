@@ -405,12 +405,15 @@ src/
     commande/[reference]/   confirmation de commande
     rapport/[token]/        téléchargement sécurisé du PDF
     admin/                  espace protégé (login + pages et actions serveur)
+    ker-care/               Kër Care : page publique, espace client, espace prestataire
+    compte/                 inscription et connexion des comptes Kër Care
     api/                    estimation, commandes, webhook, export, santé
     (pages légales, sitemap, robots)
   components/               ui/, estimator/, admin/, layout/
   lib/
     estimation/             constantes et calcul (pur, testé)
     services/               estimation, commandes, paiements, rapports
+    care/                   Kër Care : workflow, devis, entretiens, stockage, services
     payments/               adaptateurs (wave_link, wave_api) + registre
     email/                  fournisseurs (smtp, preview) + gabarits
     pdf/                    génération du rapport
@@ -422,7 +425,117 @@ e2e/                        parcours de bout en bout (Playwright)
 
 ---
 
-## 14. Points nécessitant une intervention de Kerplus
+## 14. Module Kër Care (maintenance, dépannage, carnet du logement)
+
+Kër Care prolonge Kerplus après la construction : le propriétaire **ajoute sa
+maison**, recense ses **équipements**, suit un **carnet numérique** (entretiens,
+interventions, devis, rapports, documents) et **demande une intervention** à un
+prestataire **vérifié par Kerplus**.
+
+### Parcours et routes
+
+| Espace       | Route                                     | Contenu                                                         |
+| ------------ | ----------------------------------------- | --------------------------------------------------------------- |
+| Public       | `/ker-care`                               | Promesse, catégories, fonctionnement, offres indicatives, FAQ   |
+| Comptes      | `/compte/inscription`, `/compte/connexion` | Création de compte client, connexion client / prestataire       |
+| Client       | `/ker-care/mon-espace`                    | Vue d'ensemble, rappels d'entretien, intervention en cours      |
+|              | `…/maisons`, `…/maisons/[id]`             | Logements, équipements, documents, carnet filtrable             |
+|              | `…/maisons/[id]/renovation`               | Passerelle vers l'estimateur (projet de rénovation, consentement) |
+|              | `…/entretiens`                            | À prévoir / en retard / planifiés / effectués                   |
+|              | `…/demandes`, `…/demandes/nouvelle`       | Signalement (photos, urgence, créneau), liste des demandes      |
+|              | `…/demandes/[reference]`                  | Statut, chronologie, devis, rendez-vous, rapport, avis          |
+|              | `…/offres`                                | Offres d'abonnement **indicatives, non souscriptibles**         |
+| Prestataire  | `/ker-care/prestataire`                   | Missions, rendez-vous du jour, missions à clôturer, profil      |
+|              | `…/missions/[reference]`                  | Accepter/refuser, devis, créneaux, déroulé, rapport             |
+| Admin        | `/admin/ker-care`                         | Indicateurs, demandes, affectation, prestataires, catalogue     |
+| Fichiers     | `/ker-care/fichiers/[id]`                 | Fichiers privés, servis après contrôle d'accès                  |
+
+### Workflow d'une demande
+
+`SUBMITTED` (reçue) → `SEARCHING` (recherche) → `ASSIGNED` (affectée) →
+`ACCEPTED` → `QUOTE_SENT` → `QUOTE_ACCEPTED` (ou `QUOTE_REFUSED` → devis révisé)
+→ `SCHEDULED` (rendez-vous confirmé) → `EN_ROUTE` (facultatif) → `ARRIVED` →
+`IN_PROGRESS` → `WORK_DONE` (rapport déposé) → `VALIDATED` (ou `DISPUTED`) →
+`CLOSED`. Annulation (`CANCELLED`) par le client tant qu'aucun rendez-vous n'est
+confirmé, par Kerplus ensuite.
+
+- Les transitions sont définies dans `src/lib/care/workflow.ts` (acteurs
+  autorisés), contrôlées côté serveur avec verrou optimiste, et journalisées
+  (`care_status_events` : acteur, motif, horodatage).
+- **Devis versionnés** : un devis accepté n'est jamais modifié ; tout supplément
+  est une nouvelle version soumise à l'approbation du client, et bloque le dépôt
+  du rapport tant qu'il n'est pas tranché. Total recalculé côté serveur
+  (`src/lib/care/quote.ts`), montants en francs entiers.
+- **Rendez-vous** : verrou PostgreSQL par prestataire ; deux créneaux qui se
+  chevauchent sont refusés. Visite de diagnostic distincte, frais affichés avant
+  confirmation. Heures exprimées en heure de Dakar (UTC+0).
+- **Rapport** : une révision par reprise après contestation, rien n'est écrasé.
+  La validation met à jour l'équipement (dernier entretien) et programme
+  l'échéance suivante.
+- **Statut d'intervention ≠ paiement** : aucun paiement n'est encaissé par
+  Kër Care à ce stade ; aucune confirmation de paiement n'est affichée.
+
+### Comptes et autorisations
+
+- **Clients** : inscription publique (`care_accounts`, rôle `CLIENT`).
+- **Prestataires** : créés par l'administration (mot de passe temporaire
+  affiché une seule fois, à transmettre hors ligne), puis **vérifiés** ; seul un
+  prestataire `VERIFIED` peut être affecté. Tant qu'il n'a pas accepté la
+  mission, il ne voit ni l'adresse précise ni les coordonnées du client, et il
+  n'a jamais accès aux documents du carnet (plans, factures, garanties).
+- **Administrateurs** : comptes existants (`admin_users`) ; VIEWER en lecture,
+  MANAGER pour l'affectation et le suivi, ADMIN pour le catalogue et les comptes.
+- Sessions séparées (cookie `kerplus_account_session`, audience distincte),
+  CSRF par double soumission, limitation de fréquence, appartenance des
+  ressources revérifiée à chaque action.
+
+### Fichiers
+
+Photos (JPEG, PNG, WebP) et documents (+ PDF), 5 Mo et 4 fichiers maximum par
+envoi, type vérifié par signature binaire. Stockage privé dans
+`CARE_STORAGE_DIR` (par défaut `./storage/care`, monté sur `/app/storage/care`
+dans l'image Docker) — **à placer sur un volume persistant** : sur l'offre
+gratuite de Render, les fichiers sont perdus à chaque redémarrage.
+
+### Paramètres et catalogue
+
+- `/admin/parametres`, groupe « Kër Care » : ouverture des demandes et des
+  inscriptions, commission (hypothèse 10 %), validité des devis, zone desservie,
+  consignes en cas de danger (numéros d'urgence **à vérifier**), conditions
+  d'annulation.
+- `/admin/ker-care/catalogue` : catégories (prix « à partir de » indicatif),
+  types d'équipements et fréquences d'entretien indicatives, offres.
+
+### Migration, données et commandes
+
+```bash
+npm run db:migrate:deploy      # migration additive 20261126133702_ker_care (tables care_*)
+npm run db:seed                # + catégories, types d'équipements, offres (idempotent)
+npm run db:seed:care-demo      # parcours fictif complet — JAMAIS en production
+```
+
+Le seed de démonstration refuse de s'exécuter si `NODE_ENV=production`, sauf
+`ALLOW_DEMO_DATA=true` (recette uniquement). `CARE_DEMO_PASSWORD` fixe le mot de
+passe des deux comptes fictifs (sinon il est généré et affiché).
+
+**Retour arrière** : la migration ne modifie aucune table existante. Pour la
+retirer, supprimer les tables `care_*` et les types énumérés créés par
+`prisma/migrations/20261126133702_ker_care/migration.sql`, puis retirer la ligne
+correspondante de `_prisma_migrations` (après sauvegarde).
+
+### Hors périmètre du MVP (backlog)
+
+- **P1** : paiement réel (Wave / Orange Money) et reversements, souscription aux
+  abonnements et droits associés, notifications WhatsApp/SMS/email et rappels
+  automatiques (consentement, désabonnement), affectation assistée, calendrier
+  avancé, multi-logements pour bailleurs et diaspora, réinitialisation de mot de
+  passe en libre-service.
+- **P2** : préqualification IA, audio / wolof, maintenance prédictive, contrats
+  B2B (syndics, gestionnaires), services partenaires.
+
+---
+
+## 15. Points nécessitant une intervention de Kerplus
 
 - **Identifiants Wave** : le mode API reste inactif tant que la documentation et
   les clés officielles ne sont pas fournies.
@@ -433,3 +546,7 @@ e2e/                        parcours de bout en bout (Playwright)
   blocs de contact.
 - **Logo** : aucun logo officiel n'ayant été fourni, l'identité repose sur le
   texte « Kerplus.sn ».
+- **Kër Care** : valider les offres et la commission (hypothèses), les
+  conditions d'annulation, les numéros d'urgence affichés, la procédure de
+  vérification des prestataires, et prévoir un disque persistant pour les
+  fichiers avant toute ouverture au public.

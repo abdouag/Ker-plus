@@ -17,7 +17,12 @@ import { getSettingBool, SETTING_KEYS } from '@/lib/settings';
 import { accountLoginSchema, firstIssue, signupSchema } from '@/lib/care/validation';
 import { createClientAccount } from '@/lib/care/services/accounts';
 import { CareError } from '@/lib/care/errors';
-import { assertRateLimit, text, toCareActionState, type CareActionState } from '@/app/ker-care/actions/shared';
+import {
+  assertRateLimit,
+  text,
+  toCareActionState,
+  type CareActionState,
+} from '@/app/ker-care/actions/shared';
 
 /** Seules les redirections internes vers les espaces Kër Care sont suivies. */
 function safeNext(value: string, role: string): string {

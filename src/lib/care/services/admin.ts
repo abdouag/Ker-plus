@@ -28,7 +28,12 @@ export async function listRequestsForAdmin(filters: RequestFilters) {
       ? { property: { commune: { contains: filters.commune, mode: 'insensitive' } } }
       : {}),
     ...(filters.from || filters.to
-      ? { createdAt: { ...(filters.from ? { gte: filters.from } : {}), ...(filters.to ? { lte: filters.to } : {}) } }
+      ? {
+          createdAt: {
+            ...(filters.from ? { gte: filters.from } : {}),
+            ...(filters.to ? { lte: filters.to } : {}),
+          },
+        }
       : {}),
     ...(filters.q
       ? {
@@ -78,7 +83,10 @@ export async function getRequestForAdmin(id: string) {
           assignedBy: { select: { name: true } },
         },
       },
-      quotes: { orderBy: { version: 'desc' }, include: { lines: { orderBy: { position: 'asc' } } } },
+      quotes: {
+        orderBy: { version: 'desc' },
+        include: { lines: { orderBy: { position: 'asc' } } },
+      },
       appointments: { orderBy: { startsAt: 'asc' } },
       reports: { orderBy: { revision: 'desc' }, include: { attachments: true } },
       events: {
@@ -106,7 +114,12 @@ export async function eligibleProviders(categorySlug: string, commune: string) {
       account: { select: { name: true, phone: true } },
       _count: {
         select: {
-          assignments: { where: { status: { in: ['PENDING', 'ACCEPTED'] }, request: { status: { notIn: ['CLOSED', 'CANCELLED', 'VALIDATED'] } } } },
+          assignments: {
+            where: {
+              status: { in: ['PENDING', 'ACCEPTED'] },
+              request: { status: { notIn: ['CLOSED', 'CANCELLED', 'VALIDATED'] } },
+            },
+          },
         },
       },
     },
@@ -186,7 +199,9 @@ export async function computeIndicators(periodDays = 30): Promise<CareIndicators
 
   const responseMinutes = requests
     .filter((request) => request.firstResponseAt)
-    .map((request) => Math.round((request.firstResponseAt!.getTime() - request.createdAt.getTime()) / 60_000));
+    .map((request) =>
+      Math.round((request.firstResponseAt!.getTime() - request.createdAt.getTime()) / 60_000),
+    );
 
   const decidedQuotes = quotes.length;
   const acceptedQuotes = quotes.filter((quote) => quote.status === 'ACCEPTED');
@@ -206,7 +221,9 @@ export async function computeIndicators(periodDays = 30): Promise<CareIndicators
     cancellations,
     disputes: requests.filter((request) => request.status === 'DISPUTED').length,
     averageRating: reviews.length
-      ? Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) * 10) / 10
+      ? Math.round(
+          (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length) * 10,
+        ) / 10
       : null,
     reviewCount: reviews.length,
     toAssign,

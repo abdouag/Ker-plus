@@ -43,7 +43,9 @@ export async function respondMissionAction(
     revalidatePath(SPACE, 'layout');
     return {
       ok: true,
-      message: accept ? 'Mission acceptée. Les coordonnées du client sont visibles.' : 'Mission refusée.',
+      message: accept
+        ? 'Mission acceptée. Les coordonnées du client sont visibles.'
+        : 'Mission refusée.',
     };
   } catch (error) {
     return toCareActionState(error, 'réponse mission');
@@ -88,7 +90,11 @@ export async function createQuoteAction(
       ...fields(formData, ['validityDays', 'conditions', 'exclusions', 'note']),
     });
     if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
-    const quote = await requests.createQuote(provider, text(formData, 'reference', 40), parsed.data);
+    const quote = await requests.createQuote(
+      provider,
+      text(formData, 'reference', 40),
+      parsed.data,
+    );
     revalidatePath(SPACE, 'layout');
     return { ok: true, message: `Devis v${quote.version} envoyé au client.` };
   } catch (error) {

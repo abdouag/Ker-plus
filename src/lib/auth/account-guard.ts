@@ -8,7 +8,10 @@ import { prisma } from '@/lib/prisma';
 import { ACCOUNT_SESSION_COOKIE, verifyAccountToken } from './account-session';
 import { AuthorizationError } from './guard';
 
-export type SessionAccount = Pick<Account, 'id' | 'name' | 'email' | 'phone' | 'role' | 'active'> & {
+export type SessionAccount = Pick<
+  Account,
+  'id' | 'name' | 'email' | 'phone' | 'role' | 'active'
+> & {
   providerProfile: Pick<ProviderProfile, 'id' | 'verificationStatus'> | null;
 };
 
@@ -50,9 +53,9 @@ export async function requireClientPage(returnTo: string): Promise<SessionAccoun
   return account;
 }
 
-export async function requireProviderPage(returnTo: string): Promise<
-  SessionAccount & { providerProfile: NonNullable<SessionAccount['providerProfile']> }
-> {
+export async function requireProviderPage(
+  returnTo: string,
+): Promise<SessionAccount & { providerProfile: NonNullable<SessionAccount['providerProfile']> }> {
   const account = await getCurrentAccount();
   if (!account) redirect(loginUrl(returnTo));
   if (account.role !== 'PROVIDER' || !account.providerProfile) redirect('/ker-care/mon-espace');

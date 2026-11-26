@@ -21,12 +21,7 @@ export interface SettingDefinition {
 }
 
 export type SettingGroup =
-  | 'estimation'
-  | 'commercial'
-  | 'contact'
-  | 'textes'
-  | 'paiement'
-  | 'kercare';
+  'estimation' | 'commercial' | 'contact' | 'textes' | 'paiement' | 'kercare';
 
 export const SETTING_GROUP_LABELS: Record<SettingGroup, string> = {
   estimation: 'Paramètres de calcul',

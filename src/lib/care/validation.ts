@@ -161,7 +161,11 @@ export const appointmentSchema = z.object({
   type: z.enum(['DIAGNOSTIC', 'INTERVENTION']),
   date: requiredDate,
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Heure invalide.'),
-  durationMinutes: z.coerce.number().int().min(15).max(12 * 60),
+  durationMinutes: z.coerce
+    .number()
+    .int()
+    .min(15)
+    .max(12 * 60),
   fee: z.coerce.number().int().min(0).max(1_000_000).default(0),
   note: optionalText(500),
 });

@@ -300,7 +300,9 @@ export async function saveCategoryAction(
     };
     const saved = id
       ? await prisma.careCategory.update({ where: { id }, data })
-      : await prisma.careCategory.create({ data: { ...data, slug: slugify(name) || `categorie-${Date.now()}` } });
+      : await prisma.careCategory.create({
+          data: { ...data, slug: slugify(name) || `categorie-${Date.now()}` },
+        });
     await recordAudit({
       adminUserId: admin.id,
       action: id ? 'care.category.update' : 'care.category.create',
@@ -335,7 +337,9 @@ export async function saveEquipmentTypeAction(
     };
     const saved = id
       ? await prisma.equipmentType.update({ where: { id }, data })
-      : await prisma.equipmentType.create({ data: { ...data, slug: slugify(name) || `equipement-${Date.now()}` } });
+      : await prisma.equipmentType.create({
+          data: { ...data, slug: slugify(name) || `equipement-${Date.now()}` },
+        });
     await recordAudit({
       adminUserId: admin.id,
       action: id ? 'care.equipment_type.update' : 'care.equipment_type.create',

@@ -1,3 +1,4 @@
+import { Disclosure } from '@/components/care/Disclosure';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -265,17 +266,20 @@ export default async function MissionPage({ params }: { params: Promise<{ refere
               <p className="text-sm text-ink-muted">Aucun devis envoyé.</p>
             )}
             {QUOTE_ALLOWED.includes(status) ? (
-              <details
+              <Disclosure
                 className="rounded-xl border border-forest-200 p-4"
-                open={mission.quotes.length === 0}
+                defaultOpen={mission.quotes.length === 0}
+                summaryClassName="min-h-[44px] cursor-pointer py-2 font-bold text-forest-700"
+                summary={
+                  <>
+                    {hasAcceptedQuote
+                      ? 'Proposer un supplément (nouvelle version)'
+                      : mission.quotes.length
+                        ? 'Proposer une nouvelle version'
+                        : 'Établir le devis'}
+                  </>
+                }
               >
-                <summary className="min-h-[44px] cursor-pointer py-2 font-bold text-forest-700">
-                  {hasAcceptedQuote
-                    ? 'Proposer un supplément (nouvelle version)'
-                    : mission.quotes.length
-                      ? 'Proposer une nouvelle version'
-                      : 'Établir le devis'}
-                </summary>
                 <div className="mt-3">
                   <QuoteForm
                     reference={mission.reference}
@@ -284,7 +288,7 @@ export default async function MissionPage({ params }: { params: Promise<{ refere
                     isSupplement={hasAcceptedQuote}
                   />
                 </div>
-              </details>
+              </Disclosure>
             ) : null}
           </CardBody>
         </Card>

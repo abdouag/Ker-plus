@@ -1,3 +1,4 @@
+import { Disclosure } from '@/components/care/Disclosure';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -356,13 +357,12 @@ export default async function PropertyNotebookPage({
           ) : null}
 
           {!archived ? (
-            <details
+            <Disclosure
               className="rounded-xl border border-forest-200 bg-forest-50/50 px-4 py-3"
-              open={activeEquipments.length === 0}
+              defaultOpen={activeEquipments.length === 0}
+              summaryClassName="min-h-[44px] cursor-pointer content-center text-sm font-bold text-forest-700"
+              summary={<>+ Ajouter un équipement</>}
             >
-              <summary className="min-h-[44px] cursor-pointer content-center text-sm font-bold text-forest-700">
-                + Ajouter un équipement
-              </summary>
               <div className="mt-3">
                 <EquipmentForm
                   csrfToken={csrfToken}
@@ -370,7 +370,7 @@ export default async function PropertyNotebookPage({
                   types={equipmentTypes}
                 />
               </div>
-            </details>
+            </Disclosure>
           ) : null}
         </CardBody>
       </Card>

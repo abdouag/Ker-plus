@@ -96,7 +96,7 @@ export function QuoteForm({
         {lines.map((line, index) => (
           <div
             key={line.key}
-            className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-sand-200 p-3 sm:grid-cols-[minmax(0,1fr)_90px_140px_auto]"
+            className="grid grid-cols-[88px_minmax(0,1fr)] gap-2 rounded-xl border border-sand-200 p-3 sm:grid-cols-[minmax(0,1fr)_90px_140px_auto]"
           >
             <TextField
               label={`Désignation ${index + 1}`}

@@ -329,7 +329,9 @@ export default async function CareRequestAdminPage({
               </ActionForm>
             ) : (
               <Alert tone="warning">
-                Aucun prestataire vérifié ne couvre la catégorie « {request.category.name} ».{' '}
+                {activeAssignment
+                  ? `Aucun autre prestataire vérifié ne couvre la catégorie « ${request.category.name} ».`
+                  : `Aucun prestataire vérifié ne couvre la catégorie « ${request.category.name} ».`}{' '}
                 <Link href="/admin/ker-care/prestataires" className="font-semibold underline">
                   Gérer les prestataires
                 </Link>
@@ -394,7 +396,7 @@ export default async function CareRequestAdminPage({
                 return (
                   <li
                     key={quote.id}
-                    className="grid gap-4 rounded-xl border border-sand-200 p-4 lg:grid-cols-[minmax(0,1fr)_260px]"
+                    className="grid grid-cols-1 gap-4 rounded-xl border border-sand-200 p-4 lg:grid-cols-[minmax(0,1fr)_260px]"
                   >
                     <QuoteDetails quote={quote} />
                     <dl className="h-fit space-y-1 rounded-xl bg-sand-50 p-3 text-sm">
